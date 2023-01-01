@@ -11,13 +11,13 @@ weather_data = TGWeatherBot()
 async def command_start(message: types.Message):
     await bot.send_message(message.from_user.id,
                            "Hi there! Я могу сообщить о погоде в городах России.\n"
-                           "Напишите название города.. только название ツ")
+                           "Напишите название города.. только название ツ",
+                           reply_markup=kb_client)
 
 
 async def command_help(message: types.Message):
     await bot.send_message(message.from_user.id,
-                           'Бот может сообщить о погоде в настоящий момент в любом городе России.',
-                           reply_markup=kb_client)
+                           'Бот может сообщить о погоде в настоящий момент в любом городе России.')
 
 
 async def handler_text(message: types.Message):
