@@ -37,30 +37,34 @@ def ton_diamonds_top_5_select(client_price=90, limit=5) -> list:
     return rows
 
 
-def get_result(client_price=90, limit=5):
-    rows = ton_diamonds_top_5_select(client_price, limit)
-    output = []
-    try:
-        if not rows:
-            output = ['Нет результатов по вашему запросу ¯\_(ツ)_/¯\n'
-                      'Попробуйте ввести большее количество TON']
-        else:
-            for i in rows:
-                # path = download_img.get_path_to_images(i[0])
-                # image = open(f"{path}, 'rb")
-                output.append(f"Название: {i[0]}\n"
-                              f"Редкость: {i[2]}\n"
-                              f"Стоимость: {i[4]} TON\n"
-                              f"Размер: {i[1]}\n"
-                              f"Последнее обновление цены: {i[6]} в {i[7]} UTC\n"
-                              f"Ссылка: https://ton.diamonds/collection/ton-diamonds/gqj-diamond-{i[0].split('#')[1]}")
+def get_result(client_price='90', limit=5):
+    if client_price.isnumeric():
+        rows = ton_diamonds_top_5_select(client_price, limit)
+        output = []
+        try:
+            if not rows:
+                output = ['Нет результатов по вашему запросу ¯\_(ツ)_/¯\n'
+                          'Попробуйте ввести большее количество TON']
+            else:
+                for i in rows:
+                    # path = download_img.get_path_to_images(i[0])
+                    # image = open(f"{path}, 'rb")
+                    output.append(f"Название: {i[0]}\n"
+                                  f"Редкость: {i[2]}\n"
+                                  f"Стоимость: {i[4]} TON\n"
+                                  f"Размер: {i[1]}\n"
+                                  f"Последнее обновление цены: {i[6]} в {i[7]} UTC\n"
+                                  f"Ссылка: https://ton.diamonds/collection/ton-diamonds/gqj-diamond-{i[0].split('#')[1]}")
 
-        return '\n\n'.join(output)
-    except Exception as e:
-        return f'Some ERROR: {e}\n...( ╯°□°)╯'
+            return '\n\n'.join(output)
+        except Exception as e:
+            return f'Some ERROR: {e}\n...( ╯°□°)╯'
+    else:
+        return f"Бот пока не понимает, что вы ввели (￢_￢;)"
+
 
 if __name__ == '__main__':
-    print(get_result('10000', 8))
+    print(get_result('tt', 8))
 
     # if not rows:
     #     print('Nothing')
