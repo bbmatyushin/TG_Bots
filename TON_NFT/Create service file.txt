@@ -1,0 +1,16 @@
+# Run from work directory
+# and change file name for running bot in 'ExecStart'
+
+printf "[Unit]
+Description=First weather TG Bot
+After=network-online.target
+
+[Service]
+User=$USER
+WorkingDirectory=`pwd`
+ExecStart=`pwd`/venv/bin/python3 <file_to_run_bot>
+Restart=always
+RestartSec=7
+
+[Install]
+WantedBy=multi-user.target" > /etc/systemd/system/weather_tg_bot.service

@@ -1,0 +1,11 @@
+# load image Postgres
+docker pull postgres
+
+#Create volume for data
+docker volume create ton_data
+
+# Run Docker container
+docker run -d --name pg_ton -v ton_data:/var/lib/postgresql/data -e POSTGRES_PASSWORD=admin -e POSTGRES_USER=admin -e POSTGRES_DB=ton_db -p 5432:5432 postgres:14
+
+# To get inside the container use command:
+docker exec -it pg_ton psql -U admin ton_db
