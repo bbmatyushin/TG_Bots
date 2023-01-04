@@ -1,0 +1,17 @@
+# Run from work directory.
+# Change file name for running bot in 'ExecStart'
+# and change name for service file.
+
+printf "[Unit]
+Description=First weather TG Bot
+After=network-online.target
+
+[Service]
+User=$USER
+WorkingDirectory=`pwd`
+ExecStart=`pwd`/venv/bin/python3 ton_nft_check_bot.py
+Restart=always
+RestartSec=7
+
+[Install]
+WantedBy=multi-user.target" > /etc/systemd/system/checkertonnft_bot.service
