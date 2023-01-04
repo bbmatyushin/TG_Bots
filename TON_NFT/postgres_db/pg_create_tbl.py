@@ -54,13 +54,13 @@ def pg_create_table(conn):
             );
         """)
 
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS test_tbl(
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(20),
-            date TIMESTAMP
-            );
-        """)
+        # cursor.execute("""
+        #     CREATE TABLE IF NOT EXISTS test_tbl(
+        #     id SERIAL PRIMARY KEY,
+        #     name VARCHAR(20),
+        #     date TIMESTAMP
+        #     );
+        # """)
 
         conn.commit()
 

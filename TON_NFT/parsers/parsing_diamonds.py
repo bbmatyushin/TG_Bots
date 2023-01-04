@@ -30,22 +30,22 @@ def get_data():
 
     last_page = response['data']['lastPage']
 
-    # while current_page <= last_page:
-    for i in range(len(response['data']['rows'])):
-        url_for_attr = response['data']['rows'][i]['externalLink']
-        url_image = response['data']['rows'][i]['rawImageUrl']
-        name = response['data']['rows'][i]['name']
-        size = get_diamond_attributes(url_for_attr)  # link for search size
-        nft_status = response['data']['rows'][i]['nftStatus']
-        last_sale_price = round(float(response['data']['rows'][i]['nftLastSalePrice']), 2)
-        current_price = round(float(response['data']['rows'][i]['nftSalePrice']), 2)
-        rarity = round(float(response['data']['rows'][i]['rarity']), 2)
+    while current_page <= last_page:
+        for i in range(len(response['data']['rows'])):
+            url_for_attr = response['data']['rows'][i]['externalLink']
+            url_image = response['data']['rows'][i]['rawImageUrl']
+            name = response['data']['rows'][i]['name']
+            size = get_diamond_attributes(url_for_attr)  # link for search size
+            nft_status = response['data']['rows'][i]['nftStatus']
+            last_sale_price = round(float(response['data']['rows'][i]['nftLastSalePrice']), 2)
+            current_price = round(float(response['data']['rows'][i]['nftSalePrice']), 2)
+            rarity = round(float(response['data']['rows'][i]['rarity']), 2)
 
-        yield name, size, rarity, last_sale_price, current_price, nft_status, url_image
+            yield name, size, rarity, last_sale_price, current_price, nft_status, url_image
 
-        # current_page += 1
-        # time.sleep(2)
-        # response = get_response(current_page)
+        current_page += 1
+        time.sleep(2)
+        response = get_response(current_page)
 
 
 # Написано для теста, как отрабатывает парсер

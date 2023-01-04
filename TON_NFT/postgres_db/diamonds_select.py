@@ -26,7 +26,7 @@ def ton_diamonds_top_5_select(client_price='90', limit=5) -> list:
                                 last_sale_price::float,
                                 current_price::float,
                                 nft_status,
-                                to_char(date, 'YY-MON-DD'),
+                                to_char(date, 'DD-MON-YYYY'),
                                 to_char(date, 'HH24:MI') as time
                                 FROM ton_diamonds
                                 WHERE current_price <= {float(client_price)}
@@ -44,20 +44,21 @@ def get_select_result(client_price='90', limit=5):
     if client_price.isnumeric():
         rows = ton_diamonds_top_5_select(client_price, limit)
         output = []
+        diamond_url = 'https://ton.diamonds/collection/ton-diamonds/gqj-diamond-'
         try:
             if not rows:
-                output = ['Нет результатов по вашему запросу ¯\_(ツ)_/¯\n'
-                          'Попробуйте ввести большее количество TON']
+                output = ['Нет данных по вашему запросу ¯\_(ツ)_/¯\n'
+                          'Попробуйте ввести большее количество TON.']
             else:
                 for i in rows:
                     # path = download_img.get_path_to_images(i[0])
                     # image = open(f"{path}, 'rb")
-                    output.append(f"Название: {i[0]}\n"
-                                  f"Редкость: {i[2]}\n"
-                                  f"Стоимость: {i[4]} TON\n"
-                                  f"Размер: {i[1]}\n"
-                                  f"Последнее обновление цены: {i[6]} в {i[7]} UTC\n"
-                                  f"Ссылка: https://ton.diamonds/collection/ton-diamonds/gqj-diamond-{i[0].split('#')[1]}")
+                    output.append(f"◗<b>Предмет:</b> {i[0]}\n"
+                                  f"◗<b>Редкость:</b> {i[2]}\n"
+                                  f"◗<b>Стоимость:</b> {i[4]} TON\n"
+                                  f"◗<b>Размер:</b> {i[1]}\n"
+                                  f"◗<b>Последнее обновление цены:</b> {i[6]} в {i[7]} UTC\n"
+                                  f"◗<b>Ссылка:</b> {diamond_url}{i[0].split('#')[1]}")
 
             return '\n\n'.join(output)
         except Exception as e:
