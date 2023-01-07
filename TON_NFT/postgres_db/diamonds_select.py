@@ -41,20 +41,49 @@ def ton_diamonds_top_5_select(client_message='90', limit=5, table='ton_diamonds'
     return rows
 
 
+def ton_select_rarity(value_rarity='70', table='ton_diamonds') -> list:
+    conn = pg_create_conn()
+    with conn.cursor() as cursor:
+        cursor.execute(f"""SELECT ROUND(AVG(rarity), 2)::float,
+                                ROUND(AVG(current_price), 2)::float,
+                                PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY current_price)::float,
+                                MODE() WITHIN GROUP(ORDER BY current_price)::float,
+                                MIN(current_price)::float,
+                                MAX(current_price)::float,
+                                COUNT(rarity)::int
+                                FROM {table}
+                                WHERE rarity < ({float(value_rarity)} + 1)
+                                    AND rarity > ({float(value_rarity)} - 1);
+                        """)
+        rows = cursor.fetchall()
+    conn.close()
+
+    return rows
+
+
+def select_max_min_rarity(table='ton_diamonds') -> list:
+    conn = pg_create_conn()
+    with conn.cursor() as cursor:
+        cursor.execute(f"""SELECT MIN(rarity)::float,
+                                  MAX(rarity)::float
+                            FROM {table};
+                        """)
+        rows = cursor.fetchall()
+    conn.close()
+
+    return rows
+
+
 #TODO: add this function at separate module
-def get_select_result(client_message='10000', limit=5, table='ton_diamonds', condition='current_price'):
+def get_select_result_top_5(client_message='10000', limit=5, table='ton_diamonds', condition='current_price'):
     try:
         rows = ton_diamonds_top_5_select(client_message, limit, table, condition)
         output = []
         diamond_url = 'https://ton.diamonds/collection/ton-diamonds/gqj-diamond-'
         try:
             if not rows:
-                if condition == 'current_price':
-                    output = ['Нет данных по вашему запросу ¯\_(ツ)_/¯\n'
-                              'Попробуйте ввести большее количество TON.']
-                elif condition == 'rarity':
-                    output = ['Нет данных по вашему запросу ¯\_(ツ)_/¯\n'
-                              'Попробуйте ввести другое значение редкости.']
+                output = ['<b>Нет данных по вашему запросу</b> ¯\_(ツ)_/¯\n'
+                          'Попробуйте ввести большее количество TON.']
             else:
                 for i in rows:
                     # path = download_img.get_path_to_images(i[0])
@@ -72,9 +101,34 @@ def get_select_result(client_message='10000', limit=5, table='ton_diamonds', con
         return f"Бот ожидает в сообщении только цифры (￢_￢;)"
 
 
-if __name__ == '__main__':
-    print(get_select_result(client_message='10000', condition='rarity'))
+# Выдача результата для анализа редкости
+def get_select_result_rarity(client_message='70', table='ton_diamonds'):
+    data = ton_select_rarity(client_message, table)
+    try:
+        result = []
+        result.append(f"Статистика стоимости предметов со средним значением редкости - <b>{round(data[0][0])}</b>\n"
+                      f"----------------------------\n"
+                      f"◗ <b>Количество предметов:</b> {data[0][6]}\n"
+                      f"◗ <b>Мин.цена:</b> {data[0][4]} TON\n"
+                      f"◗ <b>Макс.цена:</b> {data[0][5]} TON\n"
+                      f"◗ <b>Средняя цена:</b> {data[0][1]} TON\n"
+                      f"◗ <b>Медианная цена:</b> {data[0][2]} TON\n"
+                      f"----------------------------")
+    except TypeError:
+        min_rarity = select_max_min_rarity(table)[0][0]
+        max_rarity = select_max_min_rarity(table)[0][1]
+        result = [f'<b>Нет данных по вашему запросу</b> ¯\_(ツ)_/¯\n'
+                  f'Минимальная редкость предмета выставленного на продажу - {min_rarity}, '
+                  f'а максимальная - {max_rarity}.\n\n'
+                  f'<b>Укажите редкость в диапазоне от {min_rarity} до {max_rarity}.</b>']
 
+    return ''.join(result)
+
+
+if __name__ == '__main__':
+    print(get_select_result_rarity(500))
+    # print(get_select_result_top_5(client_message='10000', condition='rarity'))
+    #
     # if not rows:
     #     print('Nothing')
     # else:

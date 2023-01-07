@@ -6,7 +6,7 @@ kb_client = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
 button1 = KeyboardButton('/restart')
 button2 = KeyboardButton('/help')
 
-kb_client.row(button1, button2)
+kb_client.row(button2)
 
 """========== Inline Keyboard =========="""
 inl_kb_collection = InlineKeyboardMarkup(row_width=2)

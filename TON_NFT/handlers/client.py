@@ -20,8 +20,8 @@ async def command_start(message: types.Message, state: FSMContext):
                            f"которая выставлена на продажу "
                            f"на сайте [ton.diamonds](http://ton.diamonds).\n"
                            f"Укажите стоимость в *TON* и увидите топ-5 редких NFT за эту цену.\n"
-                           f"Или вы можете указать параметр *редкость* и узнаете топ-5 NFT "
-                           f"по стоимости с указанной вами редкостью.",
+                           f"Или вы можете указать параметр *редкость* и узнаете статистику по предметам "
+                           f"со средним значением такой же редкостью.",
                            parse_mode='Markdown')
     await FSMChoice.tbl_collection.set()  # Бот переходит в режим FSM
     await bot.send_message(message.from_user.id,
@@ -42,8 +42,8 @@ async def command_help(message: types.Message, state: FSMContext):
     await FSMChoice.tbl_collection.set()
     await bot.send_message(message.from_user.id, "Бот может показать топ-5 редких предметов из коллекции "
                                                  "*TON Diamonds* за ту стоимость, которую вы укажите.\n"
-                                                 "Ещё он умееет находить самые дорогие предметы с той редкостью, "
-                                                 "которую вы ему напишите.\n\n"
+                                                 "Ещё он умеет отображать статистику по предметам с той "
+                                                 "редкостью, которую вы ему напишите.\n\n"
                                                  "*Для начала выберите коллекцию* 👇",
                            parse_mode='Markdown',
                            reply_markup=inl_kb_collection)
@@ -66,7 +66,7 @@ async def temporary_choice_collection(collection: types.CallbackQuery, state: FS
     await collection.answer('Пока нет данных по Annihilation. Эта кнопка сделана '
                             'для примера ツ')
     await collection.message.answer("Выберете, пожалуйста, другую коллекцию. Сейчас доступна "
-                                    "только *TON Diamonds*",
+                                    "только *TON Diamonds*.",
                                     parse_mode='Markdown',
                                     reply_markup=inl_kb_collection)
 
@@ -95,15 +95,24 @@ async def handler_text(message: types.Message, state: FSMContext):
         try:
             condition = data['show_result']
             # table = data['tbl_collection']
-            await message.reply(ds.get_select_result(client_message=message.text,
-                                                     condition=condition),
-                                parse_mode='HTML',
-                                reply_markup=inl_kb_choice)
+            if condition == 'current_price':
+                await message.reply(ds.get_select_result_top_5(client_message=message.text,
+                                                         condition=condition),
+                                    parse_mode='HTML',
+                                    reply_markup=inl_kb_choice)
+            if condition == 'rarity':
+                await message.reply(ds.get_select_result_rarity(client_message=message.text),
+                                    parse_mode='HTML',
+                                    reply_markup=inl_kb_choice)
         except KeyError:
             await message.answer('❗Забыли нажать кнопку 👇', reply_markup=inl_kb_choice)
         await FSMChoice.show_result.set()
         # print(condition, table, message.text)
         # await message.answer('Укажите стоимость или редкость:', reply_markup=inl_kb_choice)
+
+async def handler_to_all(message: types.Message):
+    await message.answer('Для начала выберите коллекцию или воспользуетесь командой /help',
+                         reply_markup=kb_client)
 
 
 def register_handlers_client(dp: Dispatcher):
@@ -111,3 +120,4 @@ def register_handlers_client(dp: Dispatcher):
     dp.register_message_handler(command_restart, commands=['restart'], state="*")
     dp.register_message_handler(command_help, commands=['help', 'помощь'], state="*")
     dp.register_message_handler(handler_text, content_types=['text'], state=FSMChoice.show_result)
+    dp.register_message_handler(handler_to_all, content_types=['text'], state="*")

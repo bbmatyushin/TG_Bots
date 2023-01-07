@@ -25,17 +25,18 @@ def insert_values(conn=pg_create_conn(), generator=parsing_diamonds.get_data()):
                         current_timestamp);
             """)
 
-            cursor.execute(f"""
-                INSERT INTO ton_diamonds_all_data(name, size, rarity, last_sale_price, current_price,
-                                         nft_status, date)
-                VALUES ('{list(row)[0]}',
-                        '{list(row)[1]}',
-                        {list(row)[2]},
-                        {list(row)[3]},
-                        {list(row)[4]},
-                        '{list(row)[5]}',
-                        current_timestamp);
-            """)
+            # Пока не придумал для чего хранить эту инфу.
+            # cursor.execute(f"""
+            #     INSERT INTO ton_diamonds_all_data(name, size, rarity, last_sale_price, current_price,
+            #                              nft_status, date)
+            #     VALUES ('{list(row)[0]}',
+            #             '{list(row)[1]}',
+            #             {list(row)[2]},
+            #             {list(row)[3]},
+            #             {list(row)[4]},
+            #             '{list(row)[5]}',
+            #             current_timestamp);
+            # """)
 
             cursor.execute(f"""
                 INSERT INTO ton_diamonds_url_images (name, url_image, date)
