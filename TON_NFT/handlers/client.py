@@ -19,9 +19,9 @@ async def command_start(message: types.Message, state: FSMContext):
                            f"Бот хранит информацию об NFT коллекции *TON-Diamonds*, "
                            f"которая выставлена на продажу "
                            f"на сайте [ton.diamonds](http://ton.diamonds).\n"
-                           f"Укажите стоимость в *TON* и увидите топ-5 редких NFT за эту цену.\n"
+                           f"Укажите стоимость в *TON* и увидите топ-5 редких NFT за эту цену."
                            f"Или вы можете указать параметр *редкость* и узнаете статистику по предметам "
-                           f"со средним значением такой же редкостью.",
+                           f"с примерно такой же редкостью (±1 от указанной вами).",
                            parse_mode='Markdown')
     await FSMChoice.tbl_collection.set()  # Бот переходит в режим FSM
     await bot.send_message(message.from_user.id,
@@ -47,6 +47,23 @@ async def command_help(message: types.Message, state: FSMContext):
                                                  "*Для начала выберите коллекцию* 👇",
                            parse_mode='Markdown',
                            reply_markup=inl_kb_collection)
+
+
+# Для проверки состояния значений state
+async def command_state(message: types.Message, state: FSMContext):
+    try:
+        async with state.proxy() as data:
+            if data['tbl_collection']:
+                if data['show_result']:
+                    await bot.send_message(message.from_user.id,
+                                           f"Выбрана коллекция - {data['tbl_collection']}\n"
+                                           f"Показывать результаты по - {data['show_result']}")
+                else:
+                    await bot.send_message(message.from_user.id,
+                                       f"Выбрана только коллекция - {data['tbl_collection']}")
+    except KeyError:
+        await bot.send_message(message.from_user.id,
+                           f"Пока ничего не выбрано или выбрана только коллекция ¯\_(ツ)_/¯")
 
 
 @dp.callback_query_handler(text='collection_choice', state="*")
@@ -111,7 +128,7 @@ async def handler_text(message: types.Message, state: FSMContext):
         # await message.answer('Укажите стоимость или редкость:', reply_markup=inl_kb_choice)
 
 async def handler_to_all(message: types.Message):
-    await message.answer('Для начала выберите коллекцию или воспользуетесь командой /help',
+    await message.answer('Нужно сначала выберать коллекцию или воспользуйтесь командой /help',
                          reply_markup=kb_client)
 
 
@@ -119,5 +136,6 @@ def register_handlers_client(dp: Dispatcher):
     dp.register_message_handler(command_start, commands=['start', 'старт'], state="*")
     dp.register_message_handler(command_restart, commands=['restart'], state="*")
     dp.register_message_handler(command_help, commands=['help', 'помощь'], state="*")
+    dp.register_message_handler(command_state, commands=['state'], state="*")
     dp.register_message_handler(handler_text, content_types=['text'], state=FSMChoice.show_result)
     dp.register_message_handler(handler_to_all, content_types=['text'], state="*")

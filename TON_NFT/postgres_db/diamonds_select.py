@@ -98,35 +98,38 @@ def get_select_result_top_5(client_message='10000', limit=5, table='ton_diamonds
         except Exception as e:
             return f'Some ERROR: {e}\n...( ╯°□°)╯'
     except ValueError:
-        return f"Бот ожидает в сообщении только цифры (￢_￢;)"
+        return f"Бот ожидает в сообщении только цифры в формате 123.45 (￢_￢;)"
 
 
 # Выдача результата для анализа редкости
 def get_select_result_rarity(client_message='70', table='ton_diamonds'):
-    data = ton_select_rarity(client_message, table)
     try:
-        result = []
-        result.append(f"Статистика стоимости предметов со средним значением редкости - <b>{round(data[0][0])}</b>\n"
-                      f"----------------------------\n"
-                      f"◗ <b>Количество предметов:</b> {data[0][6]}\n"
-                      f"◗ <b>Мин.цена:</b> {data[0][4]} TON\n"
-                      f"◗ <b>Макс.цена:</b> {data[0][5]} TON\n"
-                      f"◗ <b>Средняя цена:</b> {data[0][1]} TON\n"
-                      f"◗ <b>Медианная цена:</b> {data[0][2]} TON\n"
-                      f"----------------------------")
-    except TypeError:
-        min_rarity = select_max_min_rarity(table)[0][0]
-        max_rarity = select_max_min_rarity(table)[0][1]
-        result = [f'<b>Нет данных по вашему запросу</b> ¯\_(ツ)_/¯\n'
-                  f'Минимальная редкость предмета выставленного на продажу - {min_rarity}, '
-                  f'а максимальная - {max_rarity}.\n\n'
-                  f'<b>Укажите редкость в диапазоне от {min_rarity} до {max_rarity}.</b>']
+        data = ton_select_rarity(client_message, table)
+        try:
+            result = []
+            result.append(f"Статистика стоимости предметов со средним значением редкости - <b>{round(data[0][0])}</b>\n"
+                          f"----------------------------\n"
+                          f"◗ <b>Количество предметов:</b> {data[0][6]}\n"
+                          f"◗ <b>Мин.цена:</b> {data[0][4]} TON\n"
+                          f"◗ <b>Макс.цена:</b> {data[0][5]} TON\n"
+                          f"◗ <b>Средняя цена:</b> {data[0][1]} TON\n"
+                          f"◗ <b>Медианная цена:</b> {data[0][2]} TON\n"
+                          f"----------------------------")
+        except TypeError:
+            min_rarity = select_max_min_rarity(table)[0][0]
+            max_rarity = select_max_min_rarity(table)[0][1]
+            result = [f'<b>Нет данных по вашему запросу</b> ¯\_(ツ)_/¯\n'
+                      f'Минимальная редкость предмета выставленного на продажу - {min_rarity}, '
+                      f'а максимальная - {max_rarity}.\n\n'
+                      f'<b>Укажите редкость в диапазоне от {min_rarity} до {max_rarity}.</b>']
+    except ValueError:
+        result = [f"Бот ожидает в сообщении только цифры в формате 123.45 (￢_￢;)"]
 
     return ''.join(result)
 
 
 if __name__ == '__main__':
-    print(get_select_result_rarity(500))
+    print(get_select_result_rarity('500'))
     # print(get_select_result_top_5(client_message='10000', condition='rarity'))
     #
     # if not rows:
