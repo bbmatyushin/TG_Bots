@@ -1,4 +1,5 @@
 from postgres_db.pg_create_tbl import pg_create_conn
+from import_mylib.data_file import collections
 """
 Здесь обрабатываются все select-запросы к таблицам.
 """
@@ -21,77 +22,88 @@ def ton_diamonds_url_images_select(name: str) -> list:
 def ton_diamonds_top_5_select(client_message='90', limit=5, table='ton_diamonds',
                               condition='current_price') -> list:
     # client_price - та цена которую напишут боту в чат
-    conn = pg_create_conn()
-    with conn.cursor() as cursor:
-        cursor.execute(f"""SELECT name, size, rarity::float,
-                                last_sale_price::float,
-                                current_price::float,
-                                nft_status,
-                                to_char(date, 'DD-MON-YYYY'),
-                                to_char(date, 'HH24:MI') as time
-                                FROM {table}
-                                WHERE {condition} <= {float(client_message)}
-                                    AND nft_status = 'sale'
-                                ORDER BY rarity DESC, current_price DESC, date DESC 
-                                LIMIT {int(limit)};
-                        """)
-        rows = cursor.fetchall()
-    conn.close()
+    with pg_create_conn() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(f"""SELECT name,
+                                    attr1,
+                                    rarity::float,
+                                    last_sale_price::float,
+                                    current_price::float,
+                                    nft_status,
+                                    to_char(date, 'DD-MON-YYYY'),
+                                    to_char(date, 'HH24:MI') as time,
+                                    collection_address,
+                                    nft_address                                    
+                                    FROM {table}
+                                    WHERE {condition} <= {float(client_message)}
+                                        AND nft_status = 'sale'
+                                    ORDER BY rarity DESC, current_price DESC, date DESC 
+                                    LIMIT {int(limit)};
+                            """)
+            rows = cursor.fetchall()
 
     return rows
 
 
 def ton_select_rarity(value_rarity='70', table='ton_diamonds') -> list:
-    conn = pg_create_conn()
-    with conn.cursor() as cursor:
-        cursor.execute(f"""SELECT ROUND(AVG(rarity), 2)::float,
-                                ROUND(AVG(current_price), 2)::float,
-                                PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY current_price)::float,
-                                MODE() WITHIN GROUP(ORDER BY current_price)::float,
-                                MIN(current_price)::float,
-                                MAX(current_price)::float,
-                                COUNT(rarity)::int
-                                FROM {table}
-                                WHERE rarity < ({float(value_rarity)} + 1)
-                                    AND rarity > ({float(value_rarity)} - 1);
-                        """)
-        rows = cursor.fetchall()
-    conn.close()
+    if table == 'ton_diamonds':
+        max_value = float(value_rarity) + float(1)
+        min_value = float(value_rarity) - float(1)
+    elif table == 'annihilation':
+        max_value = float(value_rarity) + float(5)
+        min_value = float(value_rarity) - float(5)
+    with pg_create_conn() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(f"""SELECT ROUND(AVG(rarity), 2)::float,
+                                    ROUND(AVG(current_price), 2)::float,
+                                    PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY current_price)::float,
+                                    MODE() WITHIN GROUP(ORDER BY current_price)::float,
+                                    MIN(current_price)::float,
+                                    MAX(current_price)::float,
+                                    COUNT(rarity)::int
+                                    FROM {table}
+                                    WHERE rarity < {max_value}
+                                        AND rarity > {min_value}
+                                        AND rarity <> 0;
+                            """)
+            rows = cursor.fetchall()
 
     return rows
 
 
 def select_max_min_rarity(table='ton_diamonds') -> list:
-    conn = pg_create_conn()
-    with conn.cursor() as cursor:
-        cursor.execute(f"""SELECT MIN(rarity)::float,
-                                  MAX(rarity)::float
-                            FROM {table};
-                        """)
-        rows = cursor.fetchall()
-    conn.close()
+    with pg_create_conn() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(f"""SELECT MIN(rarity)::float,
+                                      MAX(rarity)::float
+                                FROM {table}
+                                WHERE rarity <> 0;
+                            """)
+            rows = cursor.fetchall()
 
     return rows
 
 
 #TODO: add this function at separate module
-def get_select_result_top_5(client_message='10000', limit=5, table='ton_diamonds', condition='current_price'):
+def get_select_result_top_5(client_message='10000', limit=5,
+                            table='ton_diamonds', condition='current_price'):
     try:
-        rows = ton_diamonds_top_5_select(client_message, limit, table, condition)
+        rows = ton_diamonds_top_5_select(client_message=client_message, limit=limit, table=table,
+                                         condition=condition)
         output = []
-        diamond_url = 'https://ton.diamonds/collection/ton-diamonds/gqj-diamond-'
         try:
             if not rows:
                 output = ['<b>Нет данных по вашему запросу</b> ¯\_(ツ)_/¯\n'
                           'Попробуйте ввести большее количество TON.']
             else:
                 for i in rows:
+                    subject_url = f'https://ton.diamonds/collection/{i[8]}/{i[9]}'
                     # path = download_img.get_path_to_images(i[0])
                     # image = open(f"{path}, 'rb")
-                    output.append(f"◗ <b>Предмет:</b> <a href='{diamond_url}{i[0].split('#')[1]}'>{i[0]}</a>\n"
+                    output.append(f"◗ <b>Предмет:</b> <a href='{subject_url}'>{i[0]}</a>\n"
                                   f"◗ <b>Редкость:</b> {i[2]}\n"
                                   f"◗ <b>Стоимость:</b> {i[4]} TON\n"
-                                  f"◗ <b>Размер:</b> {i[1]}\n"
+                                  f"◗ <b>Атрибут:</b> {i[1]}\n"
                                   f"◗ <b>Последнее обновление цены:</b> {i[6]} в {i[7]} UTC")
 
             return '\n\n'.join(output)
@@ -104,10 +116,11 @@ def get_select_result_top_5(client_message='10000', limit=5, table='ton_diamonds
 # Выдача результата для анализа редкости
 def get_select_result_rarity(client_message='70', table='ton_diamonds'):
     try:
-        data = ton_select_rarity(client_message, table)
+        data = ton_select_rarity(value_rarity=client_message, table=table)
         try:
             result = []
-            result.append(f"Статистика стоимости предметов со средним значением редкости - <b>{round(data[0][0])}</b>\n"
+            result.append(f"Статистика стоимости предметов со средним значением "
+                          f"редкости - <b>{round(data[0][0])}</b>\n"
                           f"----------------------------\n"
                           f"◗ <b>Количество предметов:</b> {data[0][6]}\n"
                           f"◗ <b>Мин.цена:</b> {data[0][4]} TON\n"
@@ -129,11 +142,9 @@ def get_select_result_rarity(client_message='70', table='ton_diamonds'):
 
 
 if __name__ == '__main__':
-    print(get_select_result_rarity('500'))
-    # print(get_select_result_top_5(client_message='10000', condition='rarity'))
-    #
-    # if not rows:
-    #     print('Nothing')
-    # else:
-    #     for row in rows:
-    #         print(row)
+    for key, val in collections.items():
+
+        print(get_select_result_rarity(client_message='100', table=key))
+        # print(get_select_result_top_5(client_message='300', table=key))
+
+    print(1)

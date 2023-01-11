@@ -28,13 +28,13 @@ pip install -r requirements.txt
 ```sh
 mv {handlers/,import_mylib/,keyboards/,parsers/,postgres_db/} ./venv/lib/python3.8/site-packages/
 ```
-В файле *secret_keys.py* (который тоже должен лежать в папке `./venv/lib/python3.8/site-packages/import_mylib/`) прописать ТОКЕН Бота и указать порт для подключения к Postgres, который был указан при поднятии контейнера.
+В файле *data_file.py* (который тоже должен лежать в папке `./venv/lib/python3.8/site-packages/import_mylib/`) прописать ТОКЕН Бота и указать порт для подключения к Postgres, который был указан при поднятии контейнера (cловарь collections не изменять).
 Делаем это следующей командой:
 ```shell
-mv ./venv/lib/python3.8/site-packages/import_mylib/secret_keys_example.py ./venv/lib/python3.8/site-packages/import_mylib/secret_keys.py
+mv ./venv/lib/python3.8/site-packages/import_mylib/data_file_example.py ./venv/lib/python3.8/site-packages/import_mylib/data_file.py
 BOT_TOKEN=<your_token_telegram_bot>
 PG_PORT=<port_docker_postgres>
-sed -i -e "s/^TOKEN *=.*/TOKEN = \"$BOT_TOKEN\"/; s/^PORT *=.*/PORT = \"$PG_PORT\"/" ./venv/lib/python3.8/site-packages/import_mylib/secret_keys.py
+sed -i -e "s/^TOKEN *=.*/TOKEN = \"$BOT_TOKEN\"/; s/^PORT *=.*/PORT = \"$PG_PORT\"/" ./venv/lib/python3.8/site-packages/import_mylib/data_file.py
 ```
 ### Парсинг данных
 Парсинг занимает ~15 минут (в зависимости от количества данных). Можно его запустить прежде чем продолжить дальше.
@@ -53,4 +53,30 @@ crontab -e
 # запускать парсер каждые 2 часа
 # вместо ./ указать полный путь к директории
 0 */2 * * * ./venv/bin/python3 ./venv/lib/python3.8/site-packages/postgres_db/diamonds_insert_tbl.py > /dev/null 2>&1
+```
+### Запуск бота
+Находясь в рабочей директории запустить команду:
+```shell
+# Run from work directory.
+# Change file name for running bot in 'ExecStart'
+# and change name for service file.
+
+printf "[Unit]
+Description=First weather TG Bot
+After=network-online.target
+
+[Service]
+User=$USER
+WorkingDirectory=`pwd`
+ExecStart=`pwd`/venv/bin/python3 ton_nft_check_bot.py
+Restart=always
+RestartSec=7
+
+[Install]
+WantedBy=multi-user.target" > /etc/systemd/system/checkertonnft_bot.service
+```
+```shell
+systemctl daemon-reload
+systemctl enable checkertonnft_bot.service
+systemctl restart checkertonnft_bot.service
 ```

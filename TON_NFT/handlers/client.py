@@ -19,7 +19,7 @@ async def command_start(message: types.Message, state: FSMContext):
                            f"Бот хранит информацию об NFT коллекции *TON-Diamonds*, "
                            f"которая выставлена на продажу "
                            f"на сайте [ton.diamonds](http://ton.diamonds).\n"
-                           f"Укажите стоимость в *TON* и увидите топ-5 редких NFT за эту цену."
+                           f"Укажите стоимость в *TON* и увидите топ-5 редких NFT за эту цену. "
                            f"Или вы можете указать параметр *редкость* и узнаете статистику по предметам "
                            f"с примерно такой же редкостью (±1 от указанной вами).",
                            parse_mode='Markdown')
@@ -63,7 +63,7 @@ async def command_state(message: types.Message, state: FSMContext):
                                        f"Выбрана только коллекция - {data['tbl_collection']}")
     except KeyError:
         await bot.send_message(message.from_user.id,
-                           f"Пока ничего не выбрано или выбрана только коллекция ¯\_(ツ)_/¯")
+                               f"Пока ничего не выбрано или выбрана только коллекция ¯\_(ツ)_/¯")
 
 
 @dp.callback_query_handler(text='collection_choice', state="*")
@@ -75,20 +75,7 @@ async def choose_again(choose_again: types.CallbackQuery, state: FSMContext):
     await choose_again.answer()
 
 
-# Написана для демонстрации, т.к. данных по этой коллекции нет
-@dp.callback_query_handler(text='annihilation', state="*")
-async def temporary_choice_collection(collection: types.CallbackQuery, state: FSMContext):
-    await state.finish()
-    await FSMChoice.tbl_collection.set()
-    await collection.answer('Пока нет данных по Annihilation. Эта кнопка сделана '
-                            'для примера ツ')
-    await collection.message.answer("Выберете, пожалуйста, другую коллекцию. Сейчас доступна "
-                                    "только *TON Diamonds*.",
-                                    parse_mode='Markdown',
-                                    reply_markup=inl_kb_collection)
-
-
-@dp.callback_query_handler(text=['ton_diamonds'], state=FSMChoice.tbl_collection)
+@dp.callback_query_handler(text=['ton_diamonds', 'annihilation'], state=FSMChoice.tbl_collection)
 async def choice_collection(collection: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data['tbl_collection'] = collection.data
@@ -111,14 +98,16 @@ async def handler_text(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         try:
             condition = data['show_result']
-            # table = data['tbl_collection']
+            table = data['tbl_collection']
             if condition == 'current_price':
                 await message.reply(ds.get_select_result_top_5(client_message=message.text,
-                                                         condition=condition),
+                                                               table=table,
+                                                                condition=condition),
                                     parse_mode='HTML',
                                     reply_markup=inl_kb_choice)
             if condition == 'rarity':
-                await message.reply(ds.get_select_result_rarity(client_message=message.text),
+                await message.reply(ds.get_select_result_rarity(client_message=message.text,
+                                                                table=table),
                                     parse_mode='HTML',
                                     reply_markup=inl_kb_choice)
         except KeyError:
