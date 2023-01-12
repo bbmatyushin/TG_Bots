@@ -38,7 +38,7 @@ def ton_diamonds_top_5_select(client_message='90', limit=5, table='ton_diamonds'
                                     FROM {table}
                                     WHERE {condition} <= {float(client_message)}
                                         AND nft_status = 'sale'
-                                    ORDER BY rarity DESC, current_price DESC, date DESC 
+                                    ORDER BY rarity DESC, current_price DESC 
                                     LIMIT {int(limit)};
                             """)
             rows = cursor.fetchall()
