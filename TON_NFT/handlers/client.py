@@ -16,12 +16,13 @@ async def command_start(message: types.Message, state: FSMContext):
     await state.finish()
     await bot.send_message(message.from_user.id,
                            f"Hi there {message.from_user.first_name}! 👋\n"
-                           f"Бот хранит информацию об NFT коллекции *TON-Diamonds*, "
-                           f"которая выставлена на продажу "
-                           f"на сайте [ton.diamonds](http://ton.diamonds).\n"
-                           f"Укажите стоимость в *TON* и увидите топ-5 редких NFT за эту цену. "
+                           f"Бот хранит информацию об NFT коллекциях, "
+                           f"которые выставлена на продажу "
+                           f"на сайте [TON.Diamonds](http://ton.diamonds).\n"
+                           f"Выберите коллекцию и укажите стоимость в *TON* "
+                           f"и увидите *ТОП-5 редких NFT* за эту цену. "
                            f"Или вы можете указать параметр *редкость* и узнаете статистику по предметам "
-                           f"с примерно такой же редкостью (±1 от указанной вами).",
+                           f"с примерно такой же редкостью.",
                            parse_mode='Markdown')
     await FSMChoice.tbl_collection.set()  # Бот переходит в режим FSM
     await bot.send_message(message.from_user.id,
@@ -40,8 +41,9 @@ async def command_restart(message: types.Message, state: FSMContext):
 async def command_help(message: types.Message, state: FSMContext):
     await state.finish()
     await FSMChoice.tbl_collection.set()
-    await bot.send_message(message.from_user.id, "Бот может показать топ-5 редких предметов из коллекции "
-                                                 "*TON Diamonds* за ту стоимость, которую вы укажите.\n"
+    await bot.send_message(message.from_user.id, "Бот может показать топ-5 редких предметов из коллекций "
+                                                 "на сайте [TON.Diamonds](http://ton.diamonds) за ту стоимость, "
+                                                 "которую вы укажите.\n"
                                                  "Ещё он умеет отображать статистику по предметам с той "
                                                  "редкостью, которую вы ему напишите.\n\n"
                                                  "*Для начала выберите коллекцию* 👇",
@@ -75,7 +77,9 @@ async def choose_again(choose_again: types.CallbackQuery, state: FSMContext):
     await choose_again.answer()
 
 
-@dp.callback_query_handler(text=['ton_diamonds', 'annihilation'], state=FSMChoice.tbl_collection)
+@dp.callback_query_handler(text=['ton_diamonds', 'annihilation', 'g_bot_sd',
+                                 'stickerface_wearables', 'calligrafuturism_24_units'],
+                           state=FSMChoice.tbl_collection)
 async def choice_collection(collection: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data['tbl_collection'] = collection.data

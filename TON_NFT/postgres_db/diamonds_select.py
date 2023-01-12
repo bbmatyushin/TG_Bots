@@ -45,13 +45,19 @@ def ton_diamonds_top_5_select(client_message='90', limit=5, table='ton_diamonds'
     return rows
 
 
-def ton_select_rarity(value_rarity='70', table='ton_diamonds') -> list:
-    if table == 'ton_diamonds':
+def select_rarity(value_rarity='70', table='ton_diamonds') -> list:
+    with pg_create_conn() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(f"SELECT COUNT(*) FROM {table}")
+            count = cursor.fetchall()
+
+    if count > 300:
         max_value = float(value_rarity) + float(1)
         min_value = float(value_rarity) - float(1)
-    elif table == 'annihilation':
+    else:
         max_value = float(value_rarity) + float(5)
         min_value = float(value_rarity) - float(5)
+
     with pg_create_conn() as conn:
         with conn.cursor() as cursor:
             cursor.execute(f"""SELECT ROUND(AVG(rarity), 2)::float,
@@ -65,6 +71,18 @@ def ton_select_rarity(value_rarity='70', table='ton_diamonds') -> list:
                                     WHERE rarity < {max_value}
                                         AND rarity > {min_value}
                                         AND rarity <> 0;
+                            """)
+            rows = cursor.fetchall()
+
+    return rows
+
+
+def select_min_max_price(table='ton_diamonds') -> list:
+    with pg_create_conn() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(f"""SELECT MIN(current_price)::float,
+                                      MAX(current_price)::float
+                                FROM {table};
                             """)
             rows = cursor.fetchall()
 
@@ -93,8 +111,11 @@ def get_select_result_top_5(client_message='10000', limit=5,
         output = []
         try:
             if not rows:
-                output = ['<b>Нет данных по вашему запросу</b> ¯\_(ツ)_/¯\n'
-                          'Попробуйте ввести большее количество TON.']
+                min_price = select_min_max_price(table)[0][0]
+                # max_price = select_min_max_price(table)[0][1]
+                output = [f'<b>Нет данных по вашему запросу</b> ¯\_(ツ)_/¯\n'
+                          f'Попробуйте ввести большее количество TON.\n\n'
+                          f'<i>Минимальная стоимость в коллекции сейчас - {min_price} TON</i>']
             else:
                 for i in rows:
                     subject_url = f'https://ton.diamonds/collection/{i[8]}/{i[9]}'
@@ -116,7 +137,7 @@ def get_select_result_top_5(client_message='10000', limit=5,
 # Выдача результата для анализа редкости
 def get_select_result_rarity(client_message='70', table='ton_diamonds'):
     try:
-        data = ton_select_rarity(value_rarity=client_message, table=table)
+        data = select_rarity(value_rarity=client_message, table=table)
         try:
             result = []
             result.append(f"Статистика стоимости предметов со средним значением "

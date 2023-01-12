@@ -19,15 +19,19 @@ def get_response(url, current_page):
 
 
 def get_attributes(url):
-    ses = Session()
-    headers = Headers().generate()
-    ses.headers.update(headers)
-    attr_response = ses.get(url).json()
-    if not attr_response['attributes']:
-        return 'Unknown'
+    # бывают ссылки у которых нет json на конце или к json есть доп параметры (.json?ts=1669978343)
+    if url.split(".")[-1][:4] == 'json':
+        ses = Session()
+        headers = Headers().generate()
+        ses.headers.update(headers)
+        attr_response = ses.get(url).json()
+        if not attr_response['attributes']:
+            return 'Unknown'
+        else:
+            attr_value = attr_response['attributes'][0]['value']
+            return attr_value
     else:
-        attr_value = attr_response['attributes'][0]['value']
-        return attr_value
+        return 'Unknown'
 
 
 def get_data(collection='ton-diamonds'):
@@ -59,7 +63,7 @@ def get_data(collection='ton-diamonds'):
                 nft_address, collection_address
 
         current_page += 1
-        # last_page = 4  # for test
+        # last_page = 4  ##### for test
         last_page = response['data']['lastPage']
         if current_page > last_page:
             break
@@ -68,7 +72,7 @@ def get_data(collection='ton-diamonds'):
 # Написано для теста, как отрабатывает парсер
 def parsing_diamonds():
     with open('diamonds_data.txt', 'w') as f:
-        for line in get_data():
+        for line in get_data("g-bots-sd"):
             f.write(f'Name: {list(line)[0]}; Attribute: {list(line)[1]}; Price: {list(line)[4]} TON\n')
     # print(list(get_data()))
     print(1)

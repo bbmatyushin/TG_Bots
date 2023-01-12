@@ -1,5 +1,5 @@
 import psycopg2
-from import_mylib.data_file import PORT
+from import_mylib.data_file import PORT, collections
 
 
 def pg_create_conn():
@@ -13,28 +13,12 @@ def pg_create_conn():
     return conn
 
 
-def pg_create_table(conn: psycopg2.connect):
+def pg_create_table(conn: psycopg2.connect, name: str):
     with conn as conn:
         with conn.cursor() as cursor:
-            # В этой таблице будут храниться спарсенные данные по коллекции TON Diamonds
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS ton_diamonds(
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(20),
-                attr1 VARCHAR(20),
-                rarity NUMERIC(8,2),
-                last_sale_price NUMERIC(10,2),
-                current_price NUMERIC(10,2),
-                nft_status VARCHAR(10),
-                nft_address VARCHAR(70),
-                collection_address VARCHAR(70),
-                date TIMESTAMP
-                );
-            """)
-
-            # В этой таблице будут храниться спарсенные данные по коллекции Annihilation
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS annihilation(
+            # В этой таблице будут храниться спарсенные данные по коллекциям
+            cursor.execute(f"""
+                CREATE TABLE IF NOT EXISTS {name}(
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(20),
                 attr1 VARCHAR(20),
@@ -49,23 +33,14 @@ def pg_create_table(conn: psycopg2.connect):
             """)
 
             # Здесь сохраняются url картинки предмета, чтобы потом её можно было скачать
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS ton_diamonds_url_images(
+            cursor.execute(f"""
+                CREATE TABLE IF NOT EXISTS {name}_url_images(
                 id SERIAL PRIMARY KEY,
                 name VARCHAR(20) UNIQUE,
                 url_image VARCHAR(255),
                 date TIMESTAMP
                 );
             """)
-
-            cursor.execute("""
-                            CREATE TABLE IF NOT EXISTS annihilation_url_images(
-                            id SERIAL PRIMARY KEY,
-                            name VARCHAR(20) UNIQUE,
-                            url_image VARCHAR(255),
-                            date TIMESTAMP
-                            );
-                        """)
 
             # cursor.execute("""
             #     CREATE TABLE IF NOT EXISTS test_tbl(
@@ -79,12 +54,14 @@ def pg_create_table(conn: psycopg2.connect):
 
 
 if __name__ == 'postgres_db.pg_create_tbl':  # при импорте модуля сразу создадуться таблицы
-    pg_create_table(pg_create_conn())
+    for key, val in collections.items():
+        pg_create_table(pg_create_conn(), key)
 
 
 if __name__ == '__main__':
-    conn = pg_create_conn()
-    pg_create_table(conn)
+    for key, val in collections.items():
+        conn = pg_create_conn()
+        pg_create_table(conn, key)
 
     # with conn.cursor() as cursor:
     #     cursor.execute("DROP TABLE IF EXISTS test_tbl, ton_diamonds_url_images, ton_diamonds")
