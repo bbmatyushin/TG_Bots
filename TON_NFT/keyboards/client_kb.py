@@ -22,7 +22,7 @@ inl_b4_collection = InlineKeyboardButton(text="StickerFace Wearables", callback_
 inl_b5_collection = InlineKeyboardButton(text="CALLIGRAFUTURISM — 24: Units", callback_data='calligrafuturism_24_units')
 # Choice result
 inl_b1_choice = InlineKeyboardButton(text="Цена в TON", callback_data='current_price')
-inl_b2_choice = InlineKeyboardButton(text="Указать редкость", callback_data='rarity')
+inl_b2_choice = InlineKeyboardButton(text="Аналитика редкости", callback_data='rarity')
 
 inl_kb_collection.add(inl_b1_collection, inl_b2_collection,
                       inl_b3_collection, inl_b4_collection,

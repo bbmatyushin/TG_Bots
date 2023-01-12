@@ -91,10 +91,21 @@ async def choice_collection(collection: types.CallbackQuery, state: FSMContext):
 async def choice_result(choice: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data['show_result'] = choice.data
+    table = data['tbl_collection']
+    min_price = ds.select_min_max_price(table)[0][0]
+    max_price = ds.select_min_max_price(table)[0][1]
+    count = ds.select_min_max_price(table)[0][2]
+    min_rarity = ds.select_max_min_rarity(table)[0][0]
+    max_rarity = ds.select_max_min_rarity(table)[0][1]
     if data['show_result'] == 'current_price':
-        await choice.message.answer("Напишите стоимость в TON:")
+        await choice.message.answer(f"Всего выставлено на продажу {count} предметов "
+                                    f"_(стоимостью от {min_price:,} до {max_price:,} TON)_.\n"
+                                    f"*Напишите стоимость в TON:*",
+                                    parse_mode='Markdown')
     elif data['show_result'] == 'rarity':
-        await choice.message.answer("Напишите значение редкости:")
+        await choice.message.answer(f"*Напишите значение редкости:*\n"
+                                    f"_(редкость должна быть в диапазоне {min_rarity:,} - {max_rarity:,})_",
+                                    parse_mode='Markdown')
     await choice.answer()
 
 # @dp.message_handler(content_types=['text'])
@@ -121,7 +132,7 @@ async def handler_text(message: types.Message, state: FSMContext):
         # await message.answer('Укажите стоимость или редкость:', reply_markup=inl_kb_choice)
 
 async def handler_to_all(message: types.Message):
-    await message.answer('Нужно сначала выберать коллекцию или воспользуйтесь командой /help',
+    await message.answer('Нужно сначала выбрать коллекцию или воспользуйтесь командой /help.',
                          reply_markup=kb_client)
 
 

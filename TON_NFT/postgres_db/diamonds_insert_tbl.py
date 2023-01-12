@@ -14,10 +14,9 @@ def insert_values(conn=pg_create_conn(),
     with conn as conn:
         with conn.cursor() as cursor:
             cursor.execute(f"DELETE FROM {table};")
-        conn.commit()
+            conn.commit()
 
-        for row in generator:
-            with conn.cursor() as cursor:
+            for row in generator:
                 cursor.execute(f"""
                     INSERT INTO {table}(name, attr1, rarity, last_sale_price, current_price,
                                              nft_status, nft_address, collection_address, date)

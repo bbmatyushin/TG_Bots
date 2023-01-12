@@ -20,12 +20,12 @@ def pg_create_table(conn: psycopg2.connect, name: str):
             cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS {name}(
                 id SERIAL PRIMARY KEY,
-                name VARCHAR(20),
-                attr1 VARCHAR(20),
+                name VARCHAR(100),
+                attr1 VARCHAR(100),
                 rarity NUMERIC(8,2),
                 last_sale_price NUMERIC(10,2),
                 current_price NUMERIC(10,2),
-                nft_status VARCHAR(10),
+                nft_status VARCHAR(25),
                 nft_address VARCHAR(70),
                 collection_address VARCHAR(70),
                 date TIMESTAMP
@@ -36,8 +36,8 @@ def pg_create_table(conn: psycopg2.connect, name: str):
             cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS {name}_url_images(
                 id SERIAL PRIMARY KEY,
-                name VARCHAR(20) UNIQUE,
-                url_image VARCHAR(255),
+                name VARCHAR(100) UNIQUE,
+                url_image TEXT,
                 date TIMESTAMP
                 );
             """)
