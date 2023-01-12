@@ -51,7 +51,7 @@ def select_rarity(value_rarity='70', table='ton_diamonds') -> list:
             cursor.execute(f"SELECT COUNT(*) FROM {table}")
             count = cursor.fetchall()
 
-    if count > 300:
+    if count[0][0] > 300:
         max_value = float(value_rarity) + float(1)
         min_value = float(value_rarity) - float(1)
     else:
@@ -163,9 +163,9 @@ def get_select_result_rarity(client_message='70', table='ton_diamonds'):
 
 
 if __name__ == '__main__':
-    for key, val in collections.items():
+    # for key, val in collections.items():
 
-        print(get_select_result_rarity(client_message='100', table=key))
+    print(get_select_result_rarity(client_message='100', table='g_bot_sd'))
         # print(get_select_result_top_5(client_message='300', table=key))
 
     print(1)
