@@ -98,8 +98,8 @@ async def choice_result(choice: types.CallbackQuery, state: FSMContext):
     min_rarity = ds.select_max_min_rarity(table)[0][0]
     max_rarity = ds.select_max_min_rarity(table)[0][1]
     if data['show_result'] == 'current_price':
-        await choice.message.answer(f"Всего выставлено на продажу {count} предметов "
-                                    f"_(стоимостью от {min_price:,} до {max_price:,} TON)_.\n"
+        await choice.message.answer(f"_Всего выставлено на продажу {count} предметов "
+                                    f"стоимостью от {min_price:,} до {max_price:,} TON_.\n\n"
                                     f"*Напишите стоимость в TON:*",
                                     parse_mode='Markdown')
     elif data['show_result'] == 'rarity':

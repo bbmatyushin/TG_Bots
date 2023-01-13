@@ -21,23 +21,29 @@ docker run -d --name pg_ton -v ton_data:/var/lib/postgresql/data -e POSTGRES_PAS
 python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 ```
-### Преместить пакеты с модулями
-Все написанные самостоятельно модули нужно переместить в папку `./venv/lib/python3.8/site-packages/`
-Иначе будет проблема при вызове методов/функций (в Pycharm такого не наблюдалось), при запуске через терминал.
-Для перемещения используйте команду:
+### Данные для работы бота
+Переименуйте файл:
 ```sh
-mv {handlers/,import_mylib/,keyboards/,parsers/,postgres_db/} ./venv/lib/python3.8/site-packages/
+mv import_mylib/data_file_example.py import_mylib/data_file.py
 ```
-В файле *data_file.py* (который тоже должен лежать в папке `./venv/lib/python3.8/site-packages/import_mylib/`) прописать ТОКЕН Бота и указать порт для подключения к Postgres, который был указан при поднятии контейнера (cловарь collections не изменять).
+В файле *data_file.py* прописать ТОКЕН Бота и указать порт для подключения к Postgres, который был указан при поднятии контейнера (cловарь collections не изменять).
 Делаем это следующей командой:
 ```shell
-mv ./venv/lib/python3.8/site-packages/import_mylib/data_file_example.py ./venv/lib/python3.8/site-packages/import_mylib/data_file.py
+# укажите ваш токен и порт. Знаки "<" и ">" убрать.
 BOT_TOKEN=<your_token_telegram_bot>
 PG_PORT=<port_docker_postgres>
-sed -i -e "s/^TOKEN *=.*/TOKEN = \"$BOT_TOKEN\"/; s/^PORT *=.*/PORT = \"$PG_PORT\"/" ./venv/lib/python3.8/site-packages/import_mylib/data_file.py
+
+sed -i -e "s/^TOKEN *=.*/TOKEN = \"$BOT_TOKEN\"/; s/^PORT *=.*/PORT = \"$PG_PORT\"/" import_mylib/data_file.py
+```
+### Преместить пакеты с модулями
+Все написанные самостоятельно модули нужно переместить в каталог `./venv/lib/python3.8/site-packages/`
+Иначе могут быть проблемы при вызове методов/функций (в Pycharm такого не наблюдалось).
+Переместите пакеты с модулями в нужный каталог:
+```shell
+mv {handlers/,import_mylib/,keyboards/,parsers/,postgres_db/} ./venv/lib/python3.8/site-packages/
 ```
 ### Парсинг данных
-Парсинг занимает ~15 минут (в зависимости от количества данных). Можно его запустить прежде чем продолжить дальше.
+Парсинг занимает ~20-30 минут (в зависимости от количества данных). Можно его запустить прежде чем продолжить дальше.
 Запуск процесса создания таблиц, сбор данных и наполнения таблиц в фоне:
 ```shell
 # если находитесь внутри виртуального окружения

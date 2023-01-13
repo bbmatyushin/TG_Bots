@@ -73,7 +73,8 @@ def select_rarity(value_rarity='70', table='ton_diamonds') -> list:
                             """)
             rows = cursor.fetchall()
 
-            cursor.execute(f"""SELECT current_price::float                               
+            cursor.execute(f"""SELECT current_price::float,
+                                rarity::float                               
                                 FROM {table}
                                 WHERE rarity < {max_value}
                                     AND rarity > {min_value}
@@ -82,7 +83,7 @@ def select_rarity(value_rarity='70', table='ton_diamonds') -> list:
                             """)
             rows_2 = cursor.fetchall()
 
-            rows.append([rows_2[i][0] for i in range(len(rows_2))])
+            rows.append([rows_2[i] for i in range(len(rows_2))])
 
     return rows
 
@@ -155,21 +156,21 @@ def get_select_result_rarity(client_message='70', table='ton_diamonds'):
             result = []
             print_row = ''
             if len(data_price) == 1:
-                print_row = f"""◗ <b>Цена:</b> {data_price[0]:,} TON"""
+                print_row = f"""◗ <b>Цена:</b> {data_price[0][0]:,} TON | <b>R:</b> {data_price[0][1]:.2f}"""
             elif len(data_price) == 2:
-                s1 = f"◗ <b>Мин.цена:</b> {data_price[0]:,} TON\n"
-                s2 = f"◗ <b>Макс.цена:</b> {data_price[-1]:,} TON"
+                s1 = f"◗ <b>Мин.цена:</b> {data_price[0][0]:,} TON | <b>R:</b> {data_price[0][1]:.2f}\n"
+                s2 = f"◗ <b>Макс.цена:</b> {data_price[-1][0]:,} TON | <b>R:</b> {data_price[-1][1]:.2f}"
                 print_row = s1 + s2
             elif len(data_price) == 3:
-                s1 = f"◗ <b>Мин.цена (1):</b> {data_price[0]:,} TON\n"
-                s2 = f"◗ <b>Мин.цена (2):</b> {data_price[1]:,} TON (+{(data_price[1]/data_price[0] - 1) * 100:.2f}%)\n"
-                s3 = f"◗ <b>Макс.цена:</b> {data_price[-1]:,} TON"
+                s1 = f"◗ <b>Мин.цена (1):</b>\n↳ {data_price[0][0]:,} TON | <b>R:</b> {data_price[0][1]:.2f}\n"
+                s2 = f"◗ <b>Мин.цена (2):</b>\n↳ {data_price[1][0]:,} TON (+{(data_price[1][0]/data_price[0][0]- 1) * 100:.2f}%) | <b>R:</b> {data_price[1][1]:.2f}\n"
+                s3 = f"◗ <b>Макс.цена:</b> {data_price[-1][0]:,} TON | <b>R:</b> {data_price[-1][1]:.2f}"
                 print_row = s1 + s2 + s3
             elif len(data_price) >= 4:
-                s1 = f"◗ <b>Мин.цена (1):</b> {data_price[0]:,} TON\n"
-                s2 = f"◗ <b>Мин.цена (2):</b> {data_price[1]:,} TON (+{(data_price[1] / data_price[0] - 1) * 100:.2f}%)\n"
-                s3 = f"◗ <b>Мин.цена (3):</b> {data_price[2]:,} TON (+{(data_price[2] / data_price[0] - 1) * 100:.2f}%)\n"
-                s4 = f"◗ <b>Макс.цена:</b> {data_price[-1]:,} TON"
+                s1 = f"◗ <b>Мин.цена (1):</b>\n↳ {data_price[0][0]:,} TON | <b>R:</b> {data_price[0][1]:.2f}\n"
+                s2 = f"◗ <b>Мин.цена (2):</b>\n↳ {data_price[1][0]:,} TON (+{(data_price[1][0] / data_price[0][0] - 1) * 100:.2f}%) | <b>R:</b> {data_price[1][1]:.2f}\n"
+                s3 = f"◗ <b>Мин.цена (3):</b>\n↳ {data_price[2][0]:,} TON (+{(data_price[2][0] / data_price[0][0] - 1) * 100:.2f}%) | <b>R:</b> {data_price[2][1]:.2f}\n"
+                s4 = f"◗ <b>Макс.цена:</b> {data_price[-1][0]:,} TON | <b>R:</b> {data_price[-1][1]:.2f}"
                 print_row = s1 + s2 + s3 + s4
 
             result.append(f"Статистика стоимости предметов со средним значением "
@@ -196,7 +197,7 @@ def get_select_result_rarity(client_message='70', table='ton_diamonds'):
 if __name__ == '__main__':
     # for key, val in collections.items():
 
-    print(get_select_result_rarity(client_message='100', table='ton_diamonds'))
+    print(get_select_result_rarity(client_message='70', table='ton_diamonds'))
         # print(get_select_result_top_5(client_message='300', table=key))
 
-    print(1)
+    # print(1)
