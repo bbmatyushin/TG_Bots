@@ -1,0 +1,3 @@
+from postgres_db import diamonds_select
+from postgres_db import diamonds_insert_tbl
+from postgres_db import pg_create_tbl
