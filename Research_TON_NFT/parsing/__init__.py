@@ -1,0 +1,1 @@
+# from parsing.data_parser import trend_collection, popular_collection
