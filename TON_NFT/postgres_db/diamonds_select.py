@@ -47,40 +47,45 @@ def ton_diamonds_top_5_select(client_message='90', limit=5, table='ton_diamonds'
 
 
 def select_rarity(value_rarity='70', table='ton_diamonds') -> list:
-    with pg_create_conn() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute(f"SELECT COUNT(*) FROM {table}")
-            count = cursor.fetchall()
-
-    if count[0][0] > 300:
-        max_value = float(value_rarity) + float(1)
-        min_value = float(value_rarity) - float(1)
-    else:
-        max_value = float(value_rarity) + float(5)
-        min_value = float(value_rarity) - float(5)
-
-    with pg_create_conn() as conn:
+    with self.pg_create_conn() as conn:
         with conn.cursor() as cursor:
             cursor.execute(f"""SELECT ROUND(AVG(rarity), 2)::float,
-                                    ROUND(AVG(current_price), 2)::float,
-                                    PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY current_price)::float,
-                                    MODE() WITHIN GROUP(ORDER BY current_price)::float,
-                                    COUNT(rarity)::int
-                                    FROM {table}
-                                    WHERE rarity < {max_value}
-                                        AND rarity > {min_value}
-                                        AND rarity <> 0;
-                            """)
+                               ROUND(AVG(price), 2)::float,
+                               PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY price)::float,
+                               MODE() WITHIN GROUP(ORDER BY price)::float,
+                               COUNT(rarity)::int,
+                               ROUND(AVG(rating), 2)::float,
+                                        PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY rarity)::float,
+                                        MIN(rarity)::float,
+                                        MAX(rarity)::float
+                                        FROM (
+                                            (SELECT * FROM {table}
+                                            WHERE rarity <= {value_rarity}
+                                            ORDER BY rarity DESC
+                                            LIMIT 11)
+                                            UNION
+                                            (SELECT * FROM {table}
+                                            WHERE rarity > {value_rarity}
+                                            ORDER BY rarity
+                                            LIMIT 12)) as tbl;                            
+                                    """)
             rows = cursor.fetchall()
 
-            cursor.execute(f"""SELECT current_price::float,
-                                rarity::float                               
-                                FROM {table}
-                                WHERE rarity < {max_value}
-                                    AND rarity > {min_value}
-                                    AND rarity <> 0
-                                ORDER BY current_price;
-                            """)
+            cursor.execute(f"""SELECT price::float,
+                                        rarity::float,
+                                        rating::int                             
+                                        FROM (
+                                            (SELECT * FROM {table}
+                                            WHERE rarity <= {value_rarity}
+                                            ORDER BY rarity DESC
+                                            LIMIT 11)
+                                            UNION
+                                            (SELECT * FROM {table}
+                                            WHERE rarity > {value_rarity}
+                                            ORDER BY rarity
+                                            LIMIT 12)) as tbl
+                                            ORDER BY price; 
+                                    """)
             rows_2 = cursor.fetchall()
 
             rows.append([rows_2[i] for i in range(len(rows_2))])
