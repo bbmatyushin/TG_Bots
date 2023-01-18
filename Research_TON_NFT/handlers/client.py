@@ -91,16 +91,20 @@ async def show_result(callback_q: types.CallbackQuery, state: FSMContext):
     table = data['tbl_collection']
     min_price = select_.select_min_max_price(table=table)[0][0]
     max_price = select_.select_min_max_price(table=table)[0][1]
-    count = select_.select_min_max_price(table=table)[0][2]
+    count_subj = select_.select_min_max_price(table=table)[0][2]
     min_rarity = select_.select_max_min_rarity(table=table)[0][0]
     max_rarity = select_.select_max_min_rarity(table=table)[0][1]
-    if data['show_result'] == 'price':
-        await callback_q.message.answer(f"_Всего выставлено на продажу {count:,} предметов "
-                                        f"стоимостью от {min_price:,} до {max_price:,} TON_.\n\n"
-                                        f"*Напишите стоимость в TON:*",
-                                        parse_mode='Markdown')
-    elif data['show_result'] == 'rarity' or data['show_result'] == 'target_rarity':
-        await callback_q.message.answer(f"_Редкость должна быть в диапазоне {min_rarity} - {max_rarity}_\n"
+    if count_subj in [None, 0, '0']:
+        await callback_q.message.answer(f"Нет данных по этой коллекции. Возможно, стоит подождать, "
+                                        f"когда они собирутся ¯\_(ツ)_/¯...")
+    else:
+        if data['show_result'] == 'price':
+            await callback_q.message.answer(f"_Всего выставлено на продажу {count_subj:,} предметов "
+                                            f"стоимостью от {min_price:,} до {max_price:,} TON_.\n\n"
+                                            f"*Напишите стоимость в TON:*",
+                                            parse_mode='Markdown')
+        elif data['show_result'] == 'rarity' or data['show_result'] == 'target_rarity':
+            await callback_q.message.answer(f"_Редкость должна быть в диапазоне {min_rarity:,} - {max_rarity:,}_\n"
                                         f"*Напишите значение редкости:*",
                                         parse_mode='Markdown')
     await callback_q.answer()
