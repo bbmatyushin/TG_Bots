@@ -46,51 +46,59 @@ def ton_diamonds_top_5_select(client_message='90', limit=5, table='ton_diamonds'
     return rows
 
 
-def select_rarity(value_rarity='70', table='ton_diamonds') -> list:
-    with self.pg_create_conn() as conn:
+def get_data_rarity(value_rarity='70', table='ton_diamonds',
+                    lower_limit=11, upper_limit=12) -> list:
+    """Здесь получаем статистику по редкости. Можно задавать лимиты выборки,
+    чтобы точнее смотреть статистику."""
+    with pg_create_conn() as conn:
         with conn.cursor() as cursor:
             cursor.execute(f"""SELECT ROUND(AVG(rarity), 2)::float,
-                               ROUND(AVG(price), 2)::float,
-                               PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY price)::float,
-                               MODE() WITHIN GROUP(ORDER BY price)::float,
+                               ROUND(AVG(current_price), 2)::float,
+                               PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY current_price)::float,
+                               MODE() WITHIN GROUP(ORDER BY current_price)::float,
                                COUNT(rarity)::int,
-                               ROUND(AVG(rating), 2)::float,
-                                        PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY rarity)::float,
-                                        MIN(rarity)::float,
-                                        MAX(rarity)::float
-                                        FROM (
-                                            (SELECT * FROM {table}
-                                            WHERE rarity <= {value_rarity}
-                                            ORDER BY rarity DESC
-                                            LIMIT 11)
-                                            UNION
-                                            (SELECT * FROM {table}
-                                            WHERE rarity > {value_rarity}
-                                            ORDER BY rarity
-                                            LIMIT 12)) as tbl;                            
-                                    """)
+                               PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY rarity)::float,
+                               MIN(rarity)::float,
+                               MAX(rarity)::float
+                               FROM (
+                                   (SELECT * FROM {table}
+                                   WHERE rarity <= {value_rarity}
+                                   ORDER BY rarity DESC
+                                   LIMIT {lower_limit})
+                                   UNION
+                                   (SELECT * FROM {table}
+                                   WHERE rarity > {value_rarity}
+                                   ORDER BY rarity
+                                   LIMIT {upper_limit})) as tbl;                            
+                            """)
             rows = cursor.fetchall()
 
-            cursor.execute(f"""SELECT price::float,
-                                        rarity::float,
-                                        rating::int                             
+            cursor.execute(f"""SELECT current_price::float,
+                                        rarity::float                          
                                         FROM (
                                             (SELECT * FROM {table}
                                             WHERE rarity <= {value_rarity}
                                             ORDER BY rarity DESC
-                                            LIMIT 11)
+                                            LIMIT {lower_limit})
                                             UNION
                                             (SELECT * FROM {table}
                                             WHERE rarity > {value_rarity}
                                             ORDER BY rarity
-                                            LIMIT 12)) as tbl
-                                            ORDER BY price; 
+                                            LIMIT {upper_limit})) as tbl
+                                            ORDER BY current_price; 
                                     """)
             rows_2 = cursor.fetchall()
 
             rows.append([rows_2[i] for i in range(len(rows_2))])
 
     return rows
+
+
+def select_rarity(value_rarity='70', table='ton_diamonds',
+                  lower_limit=11, upper_limit=12) -> list:
+
+    return get_data_rarity(value_rarity=value_rarity, table=table,
+                           lower_limit=lower_limit, upper_limit=upper_limit)
 
 
 def select_min_max_price(table='ton_diamonds') -> list:
@@ -167,21 +175,21 @@ def get_select_result_rarity(client_message='70', table='ton_diamonds'):
                 s2 = f"◗ <b>Макс.цена:</b> {data_price[-1][0]:,} TON | <b>R:</b> {data_price[-1][1]:.2f}"
                 print_row = s1 + s2
             elif len(data_price) == 3:
-                s1 = f"◗ <b>Мин.цена (1):</b>\n↳ {data_price[0][0]:,} TON | <b>R:</b> {data_price[0][1]:.2f}\n"
-                s2 = f"◗ <b>Мин.цена (2):</b>\n↳ {data_price[1][0]:,} TON (+{(data_price[1][0]/data_price[0][0]- 1) * 100:.2f}%) | <b>R:</b> {data_price[1][1]:.2f}\n"
+                s1 = f"◗ <b>Мин.цена:</b>\n↳ 1) {data_price[0][0]:,} TON | <b>R:</b> {data_price[0][1]:.2f}\n"
+                s2 = f"↳ 2) {data_price[1][0]:,} TON (+{(data_price[1][0]/data_price[0][0]- 1) * 100:.2f}%) | <b>R:</b> {data_price[1][1]:.2f}\n"
                 s3 = f"◗ <b>Макс.цена:</b> {data_price[-1][0]:,} TON | <b>R:</b> {data_price[-1][1]:.2f}"
                 print_row = s1 + s2 + s3
             elif len(data_price) >= 4:
-                s1 = f"◗ <b>Мин.цена (1):</b>\n↳ {data_price[0][0]:,} TON | <b>R:</b> {data_price[0][1]:.2f}\n"
-                s2 = f"◗ <b>Мин.цена (2):</b>\n↳ {data_price[1][0]:,} TON (+{(data_price[1][0] / data_price[0][0] - 1) * 100:.2f}%) | <b>R:</b> {data_price[1][1]:.2f}\n"
-                s3 = f"◗ <b>Мин.цена (3):</b>\n↳ {data_price[2][0]:,} TON (+{(data_price[2][0] / data_price[0][0] - 1) * 100:.2f}%) | <b>R:</b> {data_price[2][1]:.2f}\n"
+                s1 = f"◗ <b>Мин.цена:</b>\n↳ 1) {data_price[0][0]:,} TON | <b>R:</b> {data_price[0][1]:.2f}\n"
+                s2 = f"↳ 2) {data_price[1][0]:,} TON (+{(data_price[1][0] / data_price[0][0] - 1) * 100:.2f}%) | <b>R:</b> {data_price[1][1]:.2f}\n"
+                s3 = f"↳ 3) {data_price[2][0]:,} TON (+{(data_price[2][0] / data_price[0][0] - 1) * 100:.2f}%) | <b>R:</b> {data_price[2][1]:.2f}\n"
                 s4 = f"◗ <b>Макс.цена:</b> {data_price[-1][0]:,} TON | <b>R:</b> {data_price[-1][1]:.2f}"
                 print_row = s1 + s2 + s3 + s4
 
             result.append(f"Статистика стоимости предметов со средним значением "
                           f"редкости - <b>{round(data[0][0])}</b>\n"
                           f"----------------------------\n"
-                          f"◗ <b>Количество предметов:</b> {data[0][-1]}\n"
+                          f"◗ <b>Количество предметов:</b> {data[0][4]}\n"
                           f"{print_row}\n"
                           f"◗ <b>Средняя цена:</b> {data[0][1]:,} TON\n"
                           f"◗ <b>Медианная цена:</b> {data[0][2]:,} TON\n"
