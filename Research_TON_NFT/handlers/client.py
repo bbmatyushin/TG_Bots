@@ -3,8 +3,8 @@ from aiogram.dispatcher import FSMContext  # для объявл.анотаци�
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from import_modules.create_bot import bot, dp
 
-from keyboards.client_kb import ikb_categories, ikb_trend_collect, ikb_popular_collect,\
-                                ikb_result, kb_client
+from keyboards.client_kb import ikb_categories, ikb_trend_collect, ikb_popular_collect, \
+    ikb_result, kb_client
 from import_modules import useful_tools as ut
 from pg_database.select_queries import SelectResult
 
@@ -16,13 +16,13 @@ class FSMChoice(StatesGroup):
 
 
 async def command_start_help(message: types.Message, state: FSMContext):
-    await state.reset_state()
+    await state.finish()
     await bot.send_message(message.from_user.id,
                            f"Hi there {message.from_user.first_name}! 👋\n"
                            f"Бот хранит информацию о трендовых и популяпных NFT коллекциях "
                            f"на блокчейне *TON*. "
                            f"С помощью бота можно отыскать недооцененные предметы "
-                           f"из каждой этой коллекции.\n\n"
+                           f"из этих коллекций.\n\n"
                            f"Чтобы начать - выберите категорию нажав на кнопку ниже. "
                            f"Затем выберите коллекцию и укажите стоимость в *TON* "
                            f"и увидите *ТОП-5 редких NFT* за эту цену. "
@@ -36,6 +36,7 @@ async def command_start_help(message: types.Message, state: FSMContext):
                            f"""*Выберите категорию:*""",
                            parse_mode='Markdown',
                            reply_markup=ikb_categories)
+
 
 async def command_restart(message: types.Message, state: FSMContext):
     await state.finish()
@@ -136,7 +137,14 @@ async def handler_show_result(message: types.Message, state: FSMContext):
                                     parse_mode='HTML',
                                     reply_markup=ikb_result)
             elif condition == "target_rarity":
-                await message.reply(select_.get_target_rarity_analytic(client_message=message.text.replace(",", "."),
+                # TODO: """Пользователь задает кол-во предметов в выборке.
+                # lower_limit = (значение - значение // 2), upper_limit = значение // 2"""
+                rariry_value = message.text.replace(",", ".")
+                # @dp.message_handler(content_types=['text'])
+                # async def get_rarity_limit(message: types.Message):
+                #     await message.answer("Укажите количество предметов для отбора:")
+                #     lower_limit = int(message.text) // 2
+                await message.reply(select_.get_target_rarity_analytic(client_message=rariry_value,
                                                                        table=table),
                                     parse_mode='HTML',
                                     reply_markup=ikb_result)
@@ -150,10 +158,10 @@ async def handler_to_all(message: types.Message, state: FSMContext):
         try:
             if data['choice_category'] == 'сategory_trend':
                 await message.answer('Выберите одну из трендовых коллекций:',
-                                 reply_markup=ikb_trend_collect)
+                                     reply_markup=ikb_trend_collect)
             elif data['choice_category'] == 'сategory_popular':
                 await message.answer(text="Выберите одну из популярных коллекций:",
-                                                parse_mode='Markdown', reply_markup=ikb_popular_collect)
+                                     parse_mode='Markdown', reply_markup=ikb_popular_collect)
         except KeyError:
             await FSMChoice.choice_category.set()
             await message.answer('Нужно сначала *выбрать категорию* или воспользуйтесь командой /help.',

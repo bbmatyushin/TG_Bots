@@ -95,6 +95,6 @@ WantedBy=multi-user.target" > /etc/systemd/system/researchertonnft_bot.service
 ```
 ```shell
 systemctl daemon-reload
-systemctl enable checkertonnft_bot.service
-systemctl restart checkertonnft_bot.service
+systemctl enable researchertonnft_bot.service
+systemctl restart researchertonnft_bot.service
 ```
