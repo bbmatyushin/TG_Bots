@@ -100,7 +100,7 @@ async def show_result(callback_q: types.CallbackQuery, state: FSMContext):
                                         f"*Напишите стоимость в TON:*",
                                         parse_mode='Markdown')
     elif data['show_result'] == 'rarity' or data['show_result'] == 'target_rarity':
-        await callback_q.message.answer(f"_Редкость должна быть в диапазоне {min_rarity:,} - {max_rarity:,}_\n"
+        await callback_q.message.answer(f"_Редкость должна быть в диапазоне {min_rarity} - {max_rarity}_\n"
                                         f"*Напишите значение редкости:*",
                                         parse_mode='Markdown')
     await callback_q.answer()
@@ -138,7 +138,7 @@ async def handler_show_result(message: types.Message, state: FSMContext):
                                     reply_markup=ikb_result)
             elif condition == "target_rarity":
                 # TODO: """Пользователь задает кол-во предметов в выборке.
-                # lower_limit = (значение - значение // 2), upper_limit = значение // 2"""
+                #  lower_limit = (значение - значение // 2), upper_limit = значение // 2"""
                 rariry_value = message.text.replace(",", ".")
                 # @dp.message_handler(content_types=['text'])
                 # async def get_rarity_limit(message: types.Message):
