@@ -33,16 +33,17 @@ mv import_modules/work_data_file_example.py import_modules/work_data_file.py
 BOT_TOKEN=<your_token_telegram_bot>
 
 PG_PORT=5632
-DATA_PARH=`pwd`/data/
+DATA_PATH=`pwd`/data/
 
-sed -i -e "s/^TOKEN *=.*/TOKEN=\"$BOT_TOKEN\"/; s/^PORT *=.*/PORT=\"$PG_PORT\"/; s/^dir_data_path *=.*/dir_data_path=\"$DATA_PARH\"/" import_modules/work_data_file.py
+sed -i -e "s|^TOKEN *=.*|TOKEN='$BOT_TOKEN'|; s|^PORT *=.*|PORT='$PG_PORT'|; s|^dir_data_path *=.*|dir_data_path='$DATA_PARH'|" import_modules/work_data_file.py
 ```
 ### Преместить пакеты с модулями
 Все написанные самостоятельно модули нужно переместить в каталог `./venv/lib/python3.8/site-packages/`
 Иначе могут быть проблемы при вызове методов/функций (в Pycharm такого не наблюдалось).
 Переместите пакеты с модулями в нужный каталог:
 ```shell
-mv {crontab_mod/,handlers/,import_modules/,keyboards/,parsing/,pg_database} venv/lib/python3.8/site-packages/
+cp -a {crontab_mod/,handlers/,import_modules/,keyboards/,parsing/,pg_database} venv/lib/python3.8/site-packages/ && \
+rm -rf {crontab_mod/,handlers/,import_modules/,keyboards/,parsing/,pg_database}
 ```
 ### Парсинг данных
 Парсинг занимает ~1ч.30 минут (в зависимости от количества данных). Можно его запустить прежде чем продолжить дальше.
@@ -70,7 +71,7 @@ crontab -e
 # запускать парсер каждые 2 часа начиная с 02:00 до 23:00
 # вместо ./ указать полный путь к директории
 40 1 * * * ./venv/bin/python3 ./venv/lib/python3.8/site-packages/crontab_mod/once_a_day.py > /dev/null 2>&1
-0 2-23/2 * * * ./venv/bin/python3 ./venv/lib/python3.8/site-packages/crontab_mod/every_two_hours.py > /dev/null 2>&1
+0 2-22/2 * * * ./venv/bin/python3 ./venv/lib/python3.8/site-packages/crontab_mod/every_two_hours.py > /dev/null 2>&1
 ```
 ### Запуск бота
 Находясь в рабочей директории запустить команду:

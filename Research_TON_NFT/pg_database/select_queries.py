@@ -49,12 +49,12 @@ class SelectQueries(CreateDataTables):
                                         MAX(rarity)::float
                                         FROM (
                                             (SELECT * FROM {table}
-                                            WHERE rarity <= {value_rarity}
+                                            WHERE rarity < {value_rarity}
                                             ORDER BY rarity DESC
                                             LIMIT {lower_limit})
                                             UNION
                                             (SELECT * FROM {table}
-                                            WHERE rarity > {value_rarity}
+                                            WHERE rarity >= {value_rarity}
                                             ORDER BY rarity
                                             LIMIT {upper_limit})) as tbl;                            
                                     """)
@@ -65,12 +65,12 @@ class SelectQueries(CreateDataTables):
                                         rating::int                             
                                         FROM (
                                             (SELECT * FROM {table}
-                                            WHERE rarity <= {value_rarity}
+                                            WHERE rarity < {value_rarity}
                                             ORDER BY rarity DESC
                                             LIMIT {lower_limit})
                                             UNION
                                             (SELECT * FROM {table}
-                                            WHERE rarity > {value_rarity}
+                                            WHERE rarity >= {value_rarity}
                                             ORDER BY rarity
                                             LIMIT {upper_limit})) as tbl
                                             ORDER BY price; 
@@ -179,7 +179,7 @@ class SelectResult(SelectQueries):
                                    f"ср.знач. - {round(data[0][0])}, "
                                    f"max - {data[0][8]})</em>\n"
                                    f"----------------------------\n"
-                                   f"◗ <b>Количество предметов:</b> {data[0][4]}\n"
+                                   f"◗ <b>Отобрано предметов:</b> {data[0][4]}\n"
                                    f"{self.print_row}\n"
                                    f"◗ <b>Средняя цена:</b> {data[0][1]:,} TON\n"
                                    f"◗ <b>Медианная цена:</b> {data[0][2]:,} TON\n"
@@ -201,15 +201,6 @@ class SelectResult(SelectQueries):
 
     def get_rarity_analytic(self, client_message='70', table='ton_diamonds',
                             lower_limit=15, upper_limit=15):
-        select_data = self.get_select_data_rarity
-        return self.rariry_output_data(client_message=client_message, table=table,
-                                       lower_limit=lower_limit, upper_limit=upper_limit,
-                                       select_data=select_data)
-
-    def get_target_rarity_analytic(self, client_message='70', table='ton_diamonds',
-                                   lower_limit=3, upper_limit=2):
-        """Это такой же метод как и get_rarity_analytic, но с меньшей выборкой.
-            Пока нижняя и верхняя границы не передаются пользователем."""
         select_data = self.get_select_data_rarity
         return self.rariry_output_data(client_message=client_message, table=table,
                                        lower_limit=lower_limit, upper_limit=upper_limit,
