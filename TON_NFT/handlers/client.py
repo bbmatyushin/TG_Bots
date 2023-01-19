@@ -103,9 +103,12 @@ async def choice_result(choice: types.CallbackQuery, state: FSMContext):
                                     f"*Напишите стоимость в TON:*",
                                     parse_mode='Markdown')
     elif data['show_result'] == 'rarity':
-        await choice.message.answer(f"*Напишите значение редкости:*\n"
-                                    f"_(редкость должна быть в диапазоне {min_rarity:,} - {max_rarity:,})_",
+        await choice.message.answer(f"Напишите сначала *значение редкости* и после ❗️"
+                                    f"*количество предметов* для анализа:\n\n"
+                                    f"_(редкость должна быть в диапазоне {min_rarity:,} - {max_rarity:,}, "
+                                    f"а количество предметов не больше {count:,})_",
                                     parse_mode='Markdown')
+        await choice.message.answer(f"✅ *Пример запроса:* _100 !15_", parse_mode='Markdown')
     await choice.answer()
 
 # @dp.message_handler(content_types=['text'])
@@ -117,14 +120,24 @@ async def handler_text(message: types.Message, state: FSMContext):
             if condition == 'current_price':
                 await message.reply(ds.get_select_result_top_5(client_message=message.text,
                                                                table=table,
-                                                                condition=condition),
+                                                               condition=condition),
                                     parse_mode='HTML',
                                     reply_markup=inl_kb_choice)
             if condition == 'rarity':
-                await message.reply(ds.get_select_result_rarity(client_message=message.text,
-                                                                table=table),
-                                    parse_mode='HTML',
-                                    reply_markup=inl_kb_choice)
+                # if len(message.text.split(',')) < 2:
+                try:
+                    client_rarity = message.text.replace(",", ".").split('!')[0].strip()
+                    dataset_count = float(message.text.replace(",", ".").split('!')[1].strip()) // 1
+                    lower_limit = dataset_count // 2
+                    upper_limit = dataset_count - lower_limit
+                    await message.reply(ds.get_select_result_rarity(client_message=client_rarity,
+                                                                    table=table, lower_limit=lower_limit,
+                                                                    upper_limit=upper_limit),
+                                        parse_mode='HTML',
+                                        reply_markup=inl_kb_choice)
+                except:
+                    await message.reply("❗️ Необходимо указать сначала редкость, потом количество предметов.\n\n"
+                                        "✅ *Пример запроса:* _100 !15_", parse_mode='Markdown')
         except KeyError:
             await message.answer('❗Забыли нажать кнопку 👇', reply_markup=inl_kb_choice)
         await FSMChoice.show_result.set()

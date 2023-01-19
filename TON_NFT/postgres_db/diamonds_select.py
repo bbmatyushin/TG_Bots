@@ -62,12 +62,12 @@ def get_data_rarity(value_rarity='70', table='ton_diamonds',
                                MAX(rarity)::float
                                FROM (
                                    (SELECT * FROM {table}
-                                   WHERE rarity <= {value_rarity}
+                                   WHERE rarity < {value_rarity}
                                    ORDER BY rarity DESC
                                    LIMIT {lower_limit})
                                    UNION
                                    (SELECT * FROM {table}
-                                   WHERE rarity > {value_rarity}
+                                   WHERE rarity >= {value_rarity}
                                    ORDER BY rarity
                                    LIMIT {upper_limit})) as tbl;                            
                             """)
@@ -77,12 +77,12 @@ def get_data_rarity(value_rarity='70', table='ton_diamonds',
                                         rarity::float                          
                                         FROM (
                                             (SELECT * FROM {table}
-                                            WHERE rarity <= {value_rarity}
+                                            WHERE rarity < {value_rarity}
                                             ORDER BY rarity DESC
                                             LIMIT {lower_limit})
                                             UNION
                                             (SELECT * FROM {table}
-                                            WHERE rarity > {value_rarity}
+                                            WHERE rarity >= {value_rarity}
                                             ORDER BY rarity
                                             LIMIT {upper_limit})) as tbl
                                             ORDER BY current_price; 
@@ -161,9 +161,10 @@ def get_select_result_top_5(client_message='10000', limit=5,
 
 
 # Выдача результата для анализа редкости
-def get_select_result_rarity(client_message='70', table='ton_diamonds'):
+def get_select_result_rarity(client_message='70', table='ton_diamonds', lower_limit=11, upper_limit=12):
     try:
-        data = select_rarity(value_rarity=client_message, table=table)
+        data = select_rarity(value_rarity=client_message, table=table,
+                             lower_limit=lower_limit, upper_limit=upper_limit)
         data_price = [data[-1][i] for i in range(len(data[-1]))]
         try:
             result = []
