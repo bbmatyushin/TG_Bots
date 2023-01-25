@@ -7,3 +7,5 @@ from import_modules.work_data_file import TOKEN_BOT
 
 bot = Bot(token=TOKEN_BOT)
 dp = Dispatcher(bot, storage=MemoryStorage())
+
+# bot.get_new_session()

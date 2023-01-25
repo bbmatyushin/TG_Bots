@@ -16,7 +16,7 @@ class FSMChoice(StatesGroup):
 
 
 async def command_start_help(message: types.Message, state: FSMContext):
-    await state.finish()
+    await state.reset_data()
     await bot.send_message(message.from_user.id,
                            f"Hi there {message.from_user.first_name}! 👋\n"
                            f"Бот хранит информацию о трендовых и популяпных NFT коллекциях "
@@ -55,7 +55,7 @@ async def choice_category(callback_q: types.CallbackQuery, state: FSMContext):
     await FSMChoice.choice_category.set()
     await callback_q.message.answer(text="*Выберите одну из категорий:*",
                                     parse_mode='Markdown', reply_markup=ikb_categories)
-    await callback_q.answer()
+    await callback_q.answer(cache_time=4)
 
 
 @dp.callback_query_handler(text=['сategory_trend', 'сategory_popular'],
@@ -70,7 +70,7 @@ async def user_category(callback_q: types.CallbackQuery, state: FSMContext):
     elif data['choice_category'] == 'сategory_popular':
         await callback_q.message.answer(text="Выберите одну из популярных коллекций:",
                                         parse_mode='Markdown', reply_markup=ikb_popular_collect)
-    await callback_q.answer()
+    await callback_q.answer(cache_time=4)
 
 
 @dp.callback_query_handler(text=ut.all_tables_name(), state=FSMChoice.tbl_collection)
@@ -79,7 +79,7 @@ async def choice_collection(callback_q: types.CallbackQuery, state: FSMContext):
         data['tbl_collection'] = callback_q.data
     await FSMChoice.next()
     await callback_q.message.answer('Укажите стоимость или редкость:', reply_markup=ikb_result)
-    await callback_q.answer()
+    await callback_q.answer(cache_time=4)
 
 
 @dp.callback_query_handler(text=['price', 'rarity', 'target_rarity'],
@@ -105,17 +105,17 @@ async def show_result(callback_q: types.CallbackQuery, state: FSMContext):
                                             parse_mode='Markdown')
         elif data['show_result'] == 'rarity':
             await callback_q.message.answer(f"_Редкость должна быть в диапазоне {min_rarity:,} - {max_rarity:,}_\n\n"
-                                        f"*Напишите значение редкости:*",
-                                        parse_mode='Markdown')
+                                            f"*Напишите значение редкости:*",
+                                            parse_mode='Markdown')
         elif data['show_result'] == 'target_rarity':
             await callback_q.message.answer(f"Напишите сначала *значение редкости* и после ❗️"
-                                        f"*количество предметов* для анализа:\n\n"
-                                        f"_(редкость должна быть в диапазоне {min_rarity:,} - {max_rarity:,}, "
-                                        f"а количество предметов не больше {count_subj:,})_",
-                                        parse_mode='Markdown')
-            await callback_q.message.answer(f"✅ *Пример запроса:* _100, !15_", parse_mode='Markdown')
+                                            f"*количество предметов* для анализа:\n\n"
+                                            f"_(редкость должна быть в диапазоне {min_rarity:,} - {max_rarity:,}, "
+                                            f"а количество предметов не больше {count_subj:,})_",
+                                            parse_mode='Markdown')
+            await callback_q.message.answer(f"✅ *Пример запроса:* _100 !15_", parse_mode='Markdown')
 
-    await callback_q.answer()
+    await callback_q.answer(cache_time=4)
 
 
 @dp.callback_query_handler(text='choice_collection', state=FSMChoice.show_result)
@@ -128,7 +128,7 @@ async def back_choice_coll(callback_q: types.CallbackQuery, state: FSMContext):
             await callback_q.message.answer(text="Выберите одну из популярных коллекций:",
                                             parse_mode='Markdown', reply_markup=ikb_popular_collect)
     await FSMChoice.tbl_collection.set()
-    await callback_q.answer()
+    await callback_q.answer(cache_time=4)
 
 
 async def handler_show_result(message: types.Message, state: FSMContext):
@@ -158,8 +158,8 @@ async def handler_show_result(message: types.Message, state: FSMContext):
                     await message.reply(select_.get_rarity_analytic(client_message=client_rarity,
                                                                     table=table, lower_limit=lower_limit,
                                                                     upper_limit=upper_limit),
-                                    parse_mode='HTML',
-                                    reply_markup=ikb_result)
+                                        parse_mode='HTML',
+                                        reply_markup=ikb_result)
                 except:
                     await message.reply(f"🚫 Необходимо указать сначала редкость, потом количество предметов.\n\n"
                                         f"✅ *Пример запроса:* _100 !15_",
@@ -167,7 +167,7 @@ async def handler_show_result(message: types.Message, state: FSMContext):
         except KeyError:
             await message.answer('❗Забыли нажать кнопку 👇', reply_markup=ikb_result)
         # await FSMChoice.show_result.set()
-100
+
 
 async def handler_to_all(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
