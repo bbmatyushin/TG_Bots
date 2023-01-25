@@ -4,6 +4,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from import_mylib.create_bot import bot, dp
 from postgres_db import diamonds_select as ds  # отвечает за выборку данных из таблиц
 from keyboards.client_kb import kb_client, inl_kb_collection, inl_kb_choice
+from import_mylib.data_file import collections
 
 
 class FSMChoice(StatesGroup):
@@ -77,8 +78,7 @@ async def choose_again(choose_again: types.CallbackQuery, state: FSMContext):
     await choose_again.answer()
 
 
-@dp.callback_query_handler(text=['ton_diamonds', 'annihilation', 'g_bot_sd',
-                                 'stickerface_wearables', 'calligrafuturism_24_units'],
+@dp.callback_query_handler(text=list(collections.keys()),
                            state=FSMChoice.tbl_collection)
 async def choice_collection(collection: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
@@ -136,7 +136,7 @@ async def handler_text(message: types.Message, state: FSMContext):
                                         parse_mode='HTML',
                                         reply_markup=inl_kb_choice)
                 except:
-                    await message.reply("❗️ Необходимо указать сначала редкость, потом количество предметов.\n\n"
+                    await message.reply("🚫 Необходимо указать сначала редкость, потом количество предметов.\n\n"
                                         "✅ *Пример запроса:* _100 !15_", parse_mode='Markdown')
         except KeyError:
             await message.answer('❗Забыли нажать кнопку 👇', reply_markup=inl_kb_choice)
