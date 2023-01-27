@@ -12,13 +12,13 @@ class CreateDatabase():
         # self.base.execute(f"DROP TABLE IF EXISTS {table}")
         # self.base.commit()
         self.base.execute(f"""CREATE TABLE IF NOT EXISTS {table}(
-                        exchange TEXT, pair TEXT, price FLOAT, market_url TEXT) """)
+                        exchange TEXT, pair TEXT, price FLOAT, volume_usd FLOAT, market_url TEXT) """)
         self.base.commit()
 
     def insert_table(self, table, list_data):
         # Вставлять нужно список списков
-        self.cursor.executemany(f"""INSERT INTO {table}(exchange, pair, price, market_url)
-                            VALUES (?, ?, ?, ?)""", (list_data))
+        self.cursor.executemany(f"""INSERT INTO {table}(exchange, pair, price, volume_usd, market_url)
+                            VALUES (?, ?, ?, ?, ?)""", (list_data))
         self.base.commit()
 
 

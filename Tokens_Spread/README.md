@@ -22,7 +22,7 @@ BOT_TOKEN=<your_token_telegram_bot>
 ```shell
 DATA_PATH=`pwd`
 
-sed -i -e "s|^TOKEN *=.*|TOKEN='$BOT_TOKEN'|; s|^dir_data_path *=.*|dir_data_path='$DATA_PATH'|" data_files/data_file.py
+sed -i -e "s|^BOT_TOKEN *=.*|BOT_TOKEN = '$BOT_TOKEN'|; s|^dir_data_path *=.*|dir_data_path = '$DATA_PATH'|" data_files/data_file.py
 ```
 ### Преместить пакеты с модулями
 Все написанные самостоятельно модули нужно переместить в каталог `./venv/lib/python3.8/site-packages/`
@@ -73,6 +73,6 @@ WantedBy=multi-user.target" > /etc/systemd/system/spread_tokens_bot.service
 ```
 ```shell
 systemctl daemon-reload
-systemctl enable researchertonnft_bot.service
-systemctl restart researchertonnft_bot.service
+systemctl enable spread_tokens_bot.service
+systemctl restart spread_tokens_bot.service
 ```

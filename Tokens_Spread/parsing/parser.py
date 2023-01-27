@@ -12,6 +12,7 @@ class MainParser:
         self.ut = UsefulTools()
         self.headers = Headers().generate()
         self.stable = self.ut.token_pair()
+        self.token_dict = {}
 
     def get_response_json(self, url, params):
         session = requests.Session()
@@ -29,19 +30,21 @@ class MainParser:
             if data["data"]["cryptoCurrencyList"]:
                 crypto_currency_list = data["data"]["cryptoCurrencyList"]
                 for i in range(len(crypto_currency_list)):
-                    name = crypto_currency_list[i]["name"]
                     symbol = crypto_currency_list[i]["symbol"]
+                    name = crypto_currency_list[i]["name"]
                     slug_name = crypto_currency_list[i]["slug"]
                     cmc_rank = crypto_currency_list[i]["cmcRank"]
                     last_updated = crypto_currency_list[i]["lastUpdated"][:-5]
 
                     yield symbol, (name, slug_name, cmc_rank, last_updated)
+                    # yield symbol, self.token_dict
             else:
                 break
             time.sleep(3)
             count += 1
 
     def get_symbol_tokens(self):
+        # data = self.get_symbol_tokens_data()
         data = [row for row in self.get_symbol_tokens_data()]
         currency_list = {key: val for key, val in data}
         return currency_list
@@ -69,9 +72,10 @@ class MainParser:
                 exchange = item["exchangeName"]
                 pair = item["marketPair"]
                 price = item["price"]
-                market_url = item["marketUrl"]
+                volume_usd = item["volumeUsd"]
+                market_url = item["marketUrl"]  # всегда оставлять последним
 
-                yield exchange, pair, price, market_url
+                yield exchange, pair, price, volume_usd, market_url
 
 
 if __name__ == '__main__':
