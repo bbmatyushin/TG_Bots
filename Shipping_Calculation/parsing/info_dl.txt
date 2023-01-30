@@ -1,0 +1,11 @@
+accompanying_documents - 249
+arrivalToDoor - 1060 - Доставить груз до адреса получателя
+commercialMail - 249
+derivalToDoor - 940 - Забрать груз от адреса отправителя
+express - 1518 - Экспресс-перевозка
+fatal_informing - 15 - информирование о статусе
+insurance - 106 - страхование груза
+intercity - 960 - межтерминальная перевозка
+term_insurance - 46 - страхование сроков
+unloading - 2900 - Разгрузочные работы
+
