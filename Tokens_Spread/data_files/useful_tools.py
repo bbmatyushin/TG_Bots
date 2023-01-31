@@ -16,7 +16,13 @@ class UsefulTools:
         return currency_list
 
     def token_pair(self):
-        return ["USDT", "USDC", "BUSD", "USD", "DAI"]
+        return ["USDT", "USDC", "BUSD", "USD", "DAI", "TUSD", "USDP", "USDD", "GUSD"]
+
+    def exemption_exchanges(self):
+        """По этим биржам спреды не смотреть"""
+        return ["FTX", "FTX US", "Kraken", "Coinbase Exchange", "Crypto.com Exchange",
+                "Balancer (V2)", "Balancer", "Balancer (V2) (Arbitrum)", "Balancer (V2) (Polygon)",
+                "Dapper", "Cryptopay", "WhiteBIT", "Bitstamp", "BitMEX", "LocalBitcoins", "BingX"]
 
 
 if __name__ == "__main__":

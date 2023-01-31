@@ -8,13 +8,20 @@ from data_files.useful_tools import UsefulTools
 
 
 async def answer_all_messages(message: types.Message):
+    symbol = message.text.split()[0]
     currency_list = list(UsefulTools().get_currency_list().keys())
-    if message.text.upper() in currency_list:
+    if symbol.upper() in currency_list:
         sq = SelectQuery()
-        await message.reply(sq.spread_output(table=message.text, symbol=message.text),
-                            parse_mode='HTML')
+        if len(message.text.split()) > 1:
+            volume = message.text.split()[1]
+            if volume.isdigit():
+                await message.reply(sq.spread_output(table=symbol, symbol=symbol,
+                                                     volume=float(volume)),
+                                    parse_mode='HTML')
+        elif len(message.text.split()) == 1:
+            await message.reply(sq.spread_output(table=symbol, symbol=symbol), parse_mode='HTML')
     else:
-        await message.answer("Нужно написать *тикер токена*, чтобы Бот выдал информацию по его "
+        await message.answer(f"Нужно написать *тикер токена*, чтобы Бот выдал информацию по его "
                              "спреду на биржах.",
                              parse_mode='Markdown')
 
