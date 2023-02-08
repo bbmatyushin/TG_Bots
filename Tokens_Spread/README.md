@@ -1,5 +1,4 @@
 ### Описание бота
-
 Бот умеет находить спред цены по тикеру токена.
 Отсеиваются биржи с низким уровнем доверия, который был им присвоин сервисом CoinMarketCap.
 ---
@@ -31,9 +30,7 @@ mv data_files/data_file_example.py data_files/data_file.py
 BOT_TOKEN=<your_token_telegram_bot>
 ```
 ```shell
-DATA_PATH=`pwd`
-
-sed -i -e "s|^BOT_TOKEN *=.*|BOT_TOKEN = '$BOT_TOKEN'|; s|^dir_data_path *=.*|dir_data_path = '$DATA_PATH'|" data_files/data_file.py
+sed -i -e "s|^BOT_TOKEN *=.*|BOT_TOKEN = '$BOT_TOKEN'|" data_files/data_file.py
 ```
 ### Преместить пакеты с модулями
 Все написанные самостоятельно модули нужно переместить в каталог `./venv/lib/python3.8/site-packages/`
