@@ -1,13 +1,13 @@
 import json
 import os
 
-from data_files.data_file import dir_data_path
+from data_files.data_file import dir_json_files, dir_path
 
 
 class UsefulTools:
 
     def get_currency_list(self):
-        with open(f"{dir_data_path}/symbol_tokens.json") as f:
+        with open(f"{dir_json_files}/symbol_tokens.json") as f:
             if os.stat(f.name) != 0:  # проверяем, что файл не пустой
                 currency_list = json.load(f)
             else:
@@ -26,6 +26,6 @@ class UsefulTools:
 
 
 if __name__ == "__main__":
-    ut = UsefulTools()
-    tokens = list(ut.get_currency_list().keys())
-    print(len(tokens))
+    # ut = UsefulTools()
+    # tokens = list(ut.get_currency_list().keys())
+    print(dir_path)

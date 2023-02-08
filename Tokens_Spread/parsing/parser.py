@@ -1,6 +1,6 @@
 import requests
 from fake_headers import Headers
-import time
+import time, json
 
 from data_files.useful_tools import UsefulTools
 
@@ -20,27 +20,53 @@ class MainParser:
 
     def get_tokens_data(self):
         count = 0
-        token_dict, features_coin_dict = {}, {}
         while True:
+        # while count == 0:
             params = {"start": f"{str(count)}01",
-                      "limit": "100"
-            }
+                      "limit": "100",
+                      "sortBy": "market_cap",
+                      "sortType": "desc",
+                      "convert": "USD",
+                      "cryptoType": "all",
+                      "tagType": "all",
+                      "audited": "false",
+                      "aux": "ath,atl,high24h,low24h,num_market_pairs,cmc_rank,date_added,max_supply,circulating_supply,total_supply,volume_7d,volume_30d,self_reported_circulating_supply,self_reported_market_cap"
+                      }
             data = self.get_response_json(self.url_tokens_data, params=params)
             if data["data"]["cryptoCurrencyList"]:
                 crypto_currency_list = data["data"]["cryptoCurrencyList"]
                 for i in range(len(crypto_currency_list)):
                     symbol = crypto_currency_list[i]["symbol"]
-                    features_coin_dict["name"] = crypto_currency_list[i]["name"]
-                    features_coin_dict["slug_name"] = crypto_currency_list[i]["slug"]
-                    features_coin_dict["cmc_rank"] = crypto_currency_list[i]["cmcRank"]
-                    features_coin_dict["last_updated"] = crypto_currency_list[i]["lastUpdated"][:-5]
+                    name = crypto_currency_list[i]["name"]
+                    slug_name = crypto_currency_list[i]["slug"]
+                    cmc_rank = crypto_currency_list[i]["cmcRank"]
+                    price = crypto_currency_list[i]["quotes"][0]["price"]  # стоимость в USD
+                    market_cap = crypto_currency_list[i]["quotes"][0]["marketCap"]  # float
+                    change_1h = crypto_currency_list[i]["quotes"][0]["percentChange1h"]  # float
+                    change_24h = crypto_currency_list[i]["quotes"][0]["percentChange24h"]  # float
+                    change_7d = crypto_currency_list[i]["quotes"][0]["percentChange7d"]  # float
+                    change_30d = crypto_currency_list[i]["quotes"][0]["percentChange30d"]  # float
+                    change_60d = crypto_currency_list[i]["quotes"][0]["percentChange60d"]  # float
+                    change_90d = crypto_currency_list[i]["quotes"][0]["percentChange90d"]  # float
+                    change_ytd = crypto_currency_list[i]["quotes"][0]["ytdPriceChangePercentage"]  # float
+                    volume_24h = crypto_currency_list[i]["quotes"][0]["volume24h"]  # float
+                    volume_7d = crypto_currency_list[i]["quotes"][0]["volume7d"]  # float
+                    volume_30d = crypto_currency_list[i]["quotes"][0]["volume30d"]  # float
+                    dominance = crypto_currency_list[i]["quotes"][0]["dominance"]  # float
+                    ath = crypto_currency_list[i]["ath"]  # float
+                    atl = crypto_currency_list[i]["atl"]  # float
+                    date_added = crypto_currency_list[i]["dateAdded"][:10]
+                    # last_updated = crypto_currency_list[i]["lastUpdated"][:-5]
 
-                    token_dict[symbol] = features_coin_dict.copy()
+                    yield symbol, name, slug_name, cmc_rank, price, market_cap, \
+                        change_1h, change_24h, change_7d, change_30d, change_60d, \
+                        change_90d, change_ytd, volume_24h, volume_7d, volume_30d, \
+                        dominance, ath, atl, date_added
+                    # return symbol, name, slug_name, cmc_rank
             else:
                 break
             time.sleep(4)
             count += 1
-        return token_dict
 
     def get_spread_response(self, slug_name):
         url = "https://api.coinmarketcap.com/data-api/v3/cryptocurrency/market-pairs/latest"
@@ -78,7 +104,9 @@ class MainParser:
 
 if __name__ == '__main__':
     parser = MainParser()
-    symbol = "FYN"
-    d = parser.get_spread_data(symbol)
+    # symbol = "FYN"
+    # d = parser.get_spread_data(symbol)
+    parser.get_tokens_data()
+
 
     print(1)
