@@ -65,7 +65,7 @@ class MainParser:
                     # return symbol, name, slug_name, cmc_rank
             else:
                 break
-            time.sleep(4)
+            time.sleep(3)
             count += 1
 
     def get_spread_response(self, slug_name):
@@ -99,14 +99,45 @@ class MainParser:
                 market_url = item["marketUrl"]  # всегда оставлять последним
                 if exchange not in exemption_exchanges:  # биржа не должна быть в списке исключений
                     if market_reputation >= 0.5:  # у биржи должен быть рейтинг выше 50%
-                        yield exchange, pair, price, volume_usd, market_reputation, market_url
+                        # yield exchange, pair, price, volume_usd, market_reputation, market_url
+                        return exchange, pair, price, volume_usd, market_reputation, market_url
+
+    def collect_tokens_list(self, exchange_list: list):
+        """Для cбора монет, торгующихся на заданных биржах.
+        Список бирж передается в exchange_list.
+        """
+        url = 'https://api.coinmarketcap.com/data-api/v3/exchange/market-pairs/latest'
+        tokens_list = []
+        for exchange in exchange_list:
+            count = 0
+            while True:
+                params = {
+                    "slug": f"{exchange.lower()}",
+                    "category": "spot",
+                    "start": f"{count}1",
+                    "limit": "50"
+                }
+                data = self.get_response_json(url, params=params)
+                if not data["data"]["marketPairs"]:
+                    break
+                else:
+                    for item in data["data"]["marketPairs"]:
+                        tokens_list.append(f"'{item['baseSymbol']}'")  # '' стоят для sql запроса
+                time.sleep(2)
+                count += 5
+
+            return list(set(tokens_list))
+
+
+
 
 
 if __name__ == '__main__':
     parser = MainParser()
-    # symbol = "FYN"
+    symbol = "WLKN"
     # d = parser.get_spread_data(symbol)
-    parser.get_tokens_data()
+    exchange_list = ['Binance', 'Bybit']
+    d = parser.collect_tokens_list(exchange_list)
 
 
     print(1)
