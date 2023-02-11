@@ -5,7 +5,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from data_files.create_bot import bot, dp
 from database.sqlite_select import SelectQuerySpread, SelectQueryPump
 from data_files.useful_tools import UsefulTools
-from keyboards.client_kb import kb_restart, ikb_choice, ikb_zazam
+from keyboards.client_kb import kb_restart, ikb_choice, ikb_zazam, ikb_hint_pump, ikb_hint_spread
 
 
 class FSMChoice(StatesGroup):
@@ -20,15 +20,25 @@ async def command_restart(message: types.Message, state: FSMContext):
     await message.delete()
     await state.finish()
     await message.answer(text="Пшш.. пшшш... Бот на связи! 🫡\n\n"
-                              "Выберите опцию:",
-                         reply_markup=ikb_choice)
+                              "*Выбери опцию:*",
+                         parse_mode='Markdown', reply_markup=ikb_choice)
 
 
 @dp.callback_query_handler(text=["pump"], state="*")
 async def pump_message(callback: types.CallbackQuery):
     await FSMChoice.choice_pump.set()
     await callback.message.answer(text="Жду данных для анализа pump'ов...",
-                                  reply_markup=kb_restart)
+                                  reply_markup=ikb_hint_pump)
+    await callback.answer()
+
+
+@dp.callback_query_handler(text="what_to_do_pump", state=FSMChoice.choice_pump)
+async def hint_pump(callback: types.CallbackQuery):
+    await callback.message.answer(text="Укажи ранг монеты, ниже которой анализ пампа "
+                                       "не нужно смотреть. Или задай диапазон рангов через пробел.\n\n"
+                                       "1️⃣  *2500* _(ниже этого ранга не смотреть)_\n"
+                                       "2️⃣  *200 1000* _(смотреть в этом диапазоне)_",
+                                  parse_mode='Markdown', reply_markup=kb_restart)
     await callback.answer()
 
 
@@ -36,7 +46,17 @@ async def pump_message(callback: types.CallbackQuery):
 async def spread_message(callback: types.CallbackQuery):
     await FSMChoice.choice_spread.set()
     await callback.message.answer(text="Жду данных для анализа спреда...",
-                                  reply_markup=kb_restart)
+                                  reply_markup=ikb_hint_spread)
+    await callback.answer()
+
+@dp.callback_query_handler(text="what_to_do_spread", state=FSMChoice.choice_spread)
+async def hint_pump(callback: types.CallbackQuery):
+    await callback.message.answer(text="Укажи тикер монеты для анализа. Так же через пробел можно "
+                                       "указать минимальный Дневной объем торгов на бирже.\n\n"
+                                       "*Пример:*\n"
+                                       "1️⃣  *ETH* _(тикер монеты)_\n"
+                                       "2️⃣  *ATOM 100000* _(тикер монеты + объём торгов)_",
+                                  parse_mode='Markdown', reply_markup=kb_restart)
     await callback.answer()
 
 
@@ -60,9 +80,10 @@ async def spread_zazam(callback: types.CallbackQuery):
         await callback.message.answer(text="".join(res4), parse_mode='HTML')
         await callback.message.answer(text="Выберите следующую опцию:",
                                       reply_markup=ikb_choice)
+    await callback.answer()
 
 
-@dp.message_handler(lambda msg: msg.text.lower().startswith('my'), content_types=['text'],
+@dp.message_handler(lambda msg: msg.text.lower().startswith('bb'), content_types=['text'],
                     state=FSMChoice.choice_pump)
 async def get_my_best_change(message: types.Message):
     """Сообщение должно начинаться с my, потом через пробел
