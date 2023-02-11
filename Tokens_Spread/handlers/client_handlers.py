@@ -5,34 +5,69 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from data_files.create_bot import bot, dp
 from database.sqlite_select import SelectQuerySpread, SelectQueryPump
 from data_files.useful_tools import UsefulTools
-from keyboards.client_kb import ikb_choice
+from keyboards.client_kb import kb_restart, ikb_choice, ikb_zazam
 
 
 class FSMChoice(StatesGroup):
     choice_pump = State()
     choice_spread = State()
+    zazam_spread = State()
+
+
+@dp.message_handler(lambda msg: msg.text in ["Перезапустить"],
+                    content_types=["text"], state="*")
+async def command_restart(message: types.Message, state: FSMContext):
+    await message.delete()
+    await state.finish()
+    await message.answer(text="Пшш.. пшшш... Бот на связи! 🫡\n\n"
+                              "Выберите опцию:",
+                         reply_markup=ikb_choice)
 
 
 @dp.callback_query_handler(text=["pump"], state="*")
 async def pump_message(callback: types.CallbackQuery):
     await FSMChoice.choice_pump.set()
-    await callback.message.answer(text="Жду данных для анализа pump'ов...")
+    await callback.message.answer(text="Жду данных для анализа pump'ов...",
+                                  reply_markup=kb_restart)
     await callback.answer()
 
 
 @dp.callback_query_handler(text=["spread"], state="*")
-async def pump_message(callback: types.CallbackQuery):
+async def spread_message(callback: types.CallbackQuery):
     await FSMChoice.choice_spread.set()
-    await callback.message.answer(text="Жду данных для анализа спреда...")
+    await callback.message.answer(text="Жду данных для анализа спреда...",
+                                  reply_markup=kb_restart)
     await callback.answer()
 
 
-@dp.message_handler(lambda msg: msg.text.startswith('my'), content_types=['text'],
+@dp.callback_query_handler(text=["neo_spread"], state="*")
+async def spread_zazam(callback: types.CallbackQuery):
+    await FSMChoice.zazam_spread.set()
+    query_spread = SelectQuerySpread()
+    output_result = query_spread.select_output_zazam()  #TODO: Передать объем торгов и % спреда
+    part = len(output_result) // 4  # сообщение более 4096 симв, приходится дробить
+    res1 = output_result[:part]
+    res2 = output_result[part:part + part]
+    res3 = output_result[part + part:part + part + part]
+    res4 = output_result[part + part + part:]
+    await callback.message.answer(text="".join(res1), parse_mode='HTML')
+    await callback.message.answer(text="".join(res2), parse_mode='HTML')
+    await callback.message.answer(text="".join(res3), parse_mode='HTML')
+    if not res4:
+        await callback.message.answer(text="Выберите следующую опцию:",
+                                      reply_markup=ikb_choice)
+    else:
+        await callback.message.answer(text="".join(res4), parse_mode='HTML')
+        await callback.message.answer(text="Выберите следующую опцию:",
+                                      reply_markup=ikb_choice)
+
+
+@dp.message_handler(lambda msg: msg.text.lower().startswith('my'), content_types=['text'],
                     state=FSMChoice.choice_pump)
 async def get_my_best_change(message: types.Message):
     """Сообщение должно начинаться с my, потом через пробел
         1 значение - rank_min, 2 - rank_max"""
-    data = message.text.replace("my", "")
+    data = message.text.lower().replace("my", "")
     split_text = data.strip().split()
     sq_pump = SelectQueryPump()
     if len(split_text) == 2:
@@ -69,7 +104,7 @@ async def get_best_change(message: types.Message):
                                                    rank_min=split_text[1]),
                              parse_mode='Markdown')
     elif len(split_text) == 1:
-        await message.answer(sq_pump.best_change_output(),
+        await message.answer(sq_pump.best_change_output(rank_min=split_text[0]),
                              parse_mode='Markdown')
     else:
         await message.reply(text="❌ Нет данных *¯\_(ツ)_/¯*",

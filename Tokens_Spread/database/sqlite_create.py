@@ -25,7 +25,22 @@ class CreateDatabaseSpread:
         # Вставлять нужно список списков
         self.cursor.executemany(f"""INSERT INTO {table}(exchange, pair, price, volume_usd,
                                                         market_reputation, market_url)
-                            VALUES (?, ?, ?, ?, ?, ?)""", (list_data))
+                            VALUES (?, ?, ?, ?, ?, ?)""", list_data)
+        self.base.commit()
+
+    def create_zazam_table(self):
+        self.base.execute(f"""CREATE TABLE IF NOT EXISTS zazam_table(
+                                symbol TEXT, token_name TEXT, exchange TEXT,
+                                pair TEXT, price FLOAT, volume_usd FLOAT, 
+                                market_reputation FLOAT, market_url TEXT) """)
+        self.base.commit()
+
+    def insert_zazam_table(self, list_data):
+        # Вставлять нужно список списков
+        self.cursor.executemany(f"""INSERT INTO zazam_table(symbol, token_name, exchange, pair, 
+                                                            price, volume_usd,
+                                                            market_reputation, market_url)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""", [list_data])
         self.base.commit()
 
 
@@ -64,7 +79,7 @@ class CreateDatabasePump:
                         change_90d, change_ytd, volume_24h, volume_7d, volume_30d,
                         dominance, ath, atl, date_added, date)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?,
-                                ?, ?, ?, current_timestamp)""", (row))
+                                ?, ?, ?, current_timestamp)""", row)
         self.base.commit()
 
     def create_table_all_data_coins(self):

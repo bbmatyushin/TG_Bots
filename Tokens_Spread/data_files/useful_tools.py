@@ -16,6 +16,10 @@ class UsefulTools:
 
         return currency_list
 
+    def get_zazam_tokens_dict(self):
+        with open(f"{Path(dir_json_files, 'zazam_tokens.json')}") as f:
+            return json.load(f)
+
     def get_tokens_on_exchanges(self, file_name_txt: str):
         if os.path.isfile(f"{Path(dir_json_files, file_name_txt)}"):
             with open(f"{Path(dir_json_files, file_name_txt)}", "r") as f:
@@ -36,5 +40,5 @@ class UsefulTools:
 
 if __name__ == "__main__":
     ut = UsefulTools()
-    tokens = ut.get_tokens_on_exchanges('binance_bybit_tokens.txt')
+    tokens = ut.get_zazam_tokens_dict()
     print(tokens)

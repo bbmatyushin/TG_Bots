@@ -12,6 +12,21 @@ class SelectQuerySpread(CreateDatabaseSpread):
         self.ut = UsefulTools()
         self.output = []
 
+    def format_price_correct(self, price):
+        if float(price) * 100000 < 1:
+            format_price = round(price, 7)
+        elif float(price) * 10000 < 1:
+            format_price = round(price, 6)
+        elif float(price) * 1000 < 1:
+            format_price = round(price, 5)
+        elif float(price) * 100 < 1:
+            format_price = round(price, 4)
+        elif float(price) * 10 < 1:
+            format_price = round(price, 3)
+        else:
+            format_price = round(price, 2)
+        return format_price
+
     def test_select(self, table, symbol):
         # (exchange, pair, price, volume_usd, market_url)
         spread_data = [(row) for row in self.parser.get_spread_data(symbol)]
@@ -119,8 +134,68 @@ class SelectQuerySpread(CreateDatabaseSpread):
                    f'и биржа не находится в черном списке ' \
                    f'<b>{self.ut.exemption_exchanges()}</b>.</em>'
 
+    def select_spread_zazam(self, volume_usd='0', spread_val='2'):
+        result = self.cursor.execute(f"""
+            WITH t1(token_name, price)
+            AS (SELECT token_name, MIN(price)
+                FROM zazam_table
+                WHERE volume_usd >= {float(volume_usd)}
+                GROUP BY token_name),
+                t2(token_name, price)
+            AS (SELECT token_name, MAX(price)
+                FROM zazam_table
+                WHERE volume_usd >= {float(volume_usd)}
+                GROUP BY token_name) 
+            SELECT z1.symbol, z1.token_name, z1.exchange,
+                CASE
+                    WHEN z1.market_reputation > 0.76 THEN '🟢 High'
+                    WHEN z1.market_reputation BETWEEN 0.51 AND 0.75 THEN '🟠 Moderate'
+                    ELSE '🔴 Low'
+                END AS 'confidence_min',
+                z1.market_url, z1.pair, t1.price, z1.volume_usd,
+                z2.exchange,
+                CASE
+                    WHEN z2.market_reputation > 0.76 THEN '🟢 High'
+                    WHEN z2.market_reputation BETWEEN 0.51 AND 0.75 THEN '🟠 Moderate'
+                    ELSE '🔴 Low'
+                END AS 'confidence_max',
+                z2.market_url, z2.pair, t2.price, z2.volume_usd,
+                ROUND((t2.price / t1.price - 1) * 100, 2) AS spread
+            FROM t1 JOIN t2 USING(token_name)
+            JOIN zazam_table z1 ON z1.price=t1.price
+            JOIN zazam_table z2 ON z2.price=t2.price
+            WHERE spread >= {float(spread_val)}
+            ORDER BY spread DESC
+            """)
+        return result.fetchall()
 
-class SelectQueryPump(CreateDatabasePump):
+    def select_output_zazam(self, volume_usd='1000', spread_val='2'):
+        zazam_output = []
+        data = self.select_spread_zazam(volume_usd=volume_usd, spread_val=spread_val)
+        if data:
+            for row in data:
+                keys = ['symbol', 'token_name', 'exchange_min', 'confidence_min', 'url_min', 'pair_min',
+                          'price_min', 'volume_min', 'exchange_max', 'confidence_max', 'url_max',
+                          'pair_max', 'price_max', 'volume_max', 'spread']
+                params = dict(zip(keys, [*row]))
+                params["price_min"] = self.format_price_correct(price=params["price_min"])
+                params["price_max"] = self.format_price_correct(price=params["price_max"])
+                message = f"◗ <b>{params['symbol']}</b> ({params['token_name']})\n" \
+                          f"↳ <b>Max</b> - ${params['price_max']:,} " \
+                          f"на <a href='{params['url_max']}'>{params['exchange_max']}</a> " \
+                          f"| {params['confidence_max']}, " \
+                          f"<b>Vol.:</b> ${params['volume_max']:,.0f} {params['pair_max']}\n" \
+                          f"↳ <b>Min</b> - ${params['price_min']:,} " \
+                          f"на <a href='{params['url_min']}'>{params['exchange_min']}</a> " \
+                          f"| {params['confidence_min']}, " \
+                          f"<b>Vol:</b> ${params['volume_min']:,.0f} {params['pair_min']}\n" \
+                          f"\n" \
+                          f"📈 <b>СПРЕД:</b> {params['spread']}%\n" \
+                          f"-----------------------------\n"
+                zazam_output.append(message)
+        return zazam_output  # возвращать списком, в хэндлере делить на 3 части и делать "".join()
+
+class SelectQueryPump(CreateDatabasePump, SelectQuerySpread):
     def __init__(self):
         super().__init__()
         self.parser = MainParser()
@@ -161,7 +236,7 @@ class SelectQueryPump(CreateDatabasePump):
 
         return result.fetchall()
 
-    def best_change_output(self, rank_min='0', rank_max='1', limit='10'):
+    def best_change_output(self, rank_min='100000', rank_max='1', limit='10'):
         """parser_mode = 'Markdown'"""
         all_data = self.select_best_change(rank_min=rank_min, rank_max=rank_max, limit=limit)
         if all_data:
@@ -171,18 +246,7 @@ class SelectQueryPump(CreateDatabasePump):
                     change_90d, change_ytd, volume_30d, ath, atl, date_added, date, time = \
                     data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], \
                     data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16]
-                if float(price) * 100000 < 1:
-                    format_price = round(price, 7)
-                elif float(price) * 10000 < 1:
-                    format_price = round(price, 6)
-                elif float(price) * 1000 < 1:
-                    format_price = round(price, 5)
-                elif float(price) * 100 < 1:
-                    format_price = round(price, 4)
-                elif float(price) * 10 < 1:
-                    format_price = round(price, 3)
-                else:
-                    format_price = round(price, 2)
+                format_price = self.format_price_correct(price)
                 change_1h = f"↳ *1ч:* +{float(change_1h):,.1f}% ✅" if float(change_1h) > 0 \
                     else f"↳ *1ч:* {float(change_1h):,.1f}% 🔻"
                 change_24h = f"*24ч:* +{float(change_24h):,.1f}% ✅" if float(change_24h) > 0 \
@@ -276,25 +340,23 @@ class SelectQueryPump(CreateDatabasePump):
             return f'❌ Нет данных *¯\_(ツ)_/¯*'
 
 
-
 if __name__ == "__main__":
     symbol = 'FYN'
-    get_select = SelectQueryPump()
-    x = get_select.best_change_output_to_me()
-    for i in range(len(x)):
-        print(x[i])
 
-    # with open("test_data_file.json", "w") as f:
-    #     token_key, token_val = {}, {}
-    #     for i in range(len(x)):
-    #         token_val["name"] = x[i][1]
-    #         token_val["cmc_rank"] = x[i][2]
-    #         token_val["date_update"] = x[i][3]
-    #         token_key[x[i][0]] = token_val.copy()
-    #     json.dump(token_key, f)
+    result = SelectQuerySpread().select_output_zazam()
+    # part = len(result) // 3
+    # res1 = result[:part]
+    # res2 = result[part:part + part]
+    # res3 = result[part + part:]
+    # print("".join(res1))
+    # print('===============================')
+    # print("".join(res2))
+    # print('===============================')
+    # print("".join(res3))
+    # print('===============================')
+    print("".join(result))
+    print(len("".join(result)))
 
-    # for i in range(len(x)):
-    #     print(','.join(map(str, x[i])).split(','))
-
-
-    # cursor.execute(f"""SELECT * FROM {table} WHERE pair == ?""", ('ETH/USDT',))
+    # get_select = SelectQuerySpread().select_spread_zazam(volume_usd='100000')
+    # for _ in get_select:
+    #     print(*_)
