@@ -14,3 +14,9 @@ ikb_choice = InlineKeyboardMarkup(row_width=3)\
 
 ikb_zazam = InlineKeyboardMarkup(row_width=3)\
     .add((InlineKeyboardButton(text="Neo-spread", callback_data="zazam_spread")))
+
+ikb_hint_pump = InlineKeyboardMarkup(row_width=1)\
+    .add(InlineKeyboardButton(text="Что делать?", callback_data="what_to_do_pump"))
+
+ikb_hint_spread = InlineKeyboardMarkup(row_width=1)\
+    .add(InlineKeyboardButton(text="Что делать?", callback_data="what_to_do_spread"))
