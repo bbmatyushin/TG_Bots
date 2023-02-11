@@ -18,6 +18,21 @@ class MainParser:
 
         return session.get(url, params=params, stream=True).json()
 
+    def get_zazam_tokens(self):
+        url_1inch_w = 'https://api.icodrops.com/portfolio/api/portfolioGroup/individualShare/1inch-wallet-4n77nknicd'
+        url_trust_w = 'https://api.icodrops.com/portfolio/api/portfolioGroup/individualShare/trust-wallet-lwu80viger'
+        url_cexes_w = 'https://api.icodrops.com/portfolio/api/portfolioGroup/individualShare/cexes-dw5zkzz62f'
+        params = {}
+        tokens_dict = {}
+        feature_dict = {}
+        for url in [url_1inch_w, url_trust_w, url_cexes_w]:
+            response = self.get_response_json(url, params)
+            for d in response["portfolios"]:
+                feature_dict["name"] = d["name"]
+                feature_dict["slug"] = d["slug"]
+                tokens_dict[d["symbol"]] = feature_dict.copy()
+        return tokens_dict
+
     def get_tokens_data(self):
         count = 0
         while True:
@@ -78,13 +93,14 @@ class MainParser:
             "centerType": "all",
             "sort": "cmc_rank_advanced"
         }
-
         response = requests.get(url, headers=self.headers, params=params).json()
-
-        return response['data']['marketPairs']
+        try:
+            return response['data']['marketPairs']
+        except KeyError:  # если не верный slug_name
+            return None
 
     def get_spread_data(self, symbol: str):
-        """Функция для получения данных по указанному токену (symbol).
+        """Метод для получения данных по указанному токену (symbol).
         Эти данные будут записанны в БД."""
         tokens_list = self.ut.get_currency_list()
         exemption_exchanges = self.ut.exemption_exchanges()  # список бирж для исключения
@@ -99,8 +115,27 @@ class MainParser:
                 market_url = item["marketUrl"]  # всегда оставлять последним
                 if exchange not in exemption_exchanges:  # биржа не должна быть в списке исключений
                     if market_reputation >= 0.5:  # у биржи должен быть рейтинг выше 50%
-                        # yield exchange, pair, price, volume_usd, market_reputation, market_url
-                        return exchange, pair, price, volume_usd, market_reputation, market_url
+                        yield exchange, pair, price, volume_usd, market_reputation, market_url
+                        # return exchange, pair, price, volume_usd, market_reputation, market_url
+
+    def get_spread_data_zazam(self, symbol, name, slug):
+        """Метод для сбора данных под таблицу zazam_table"""
+        exemption_exchanges = self.ut.exemption_exchanges()  # список бирж для исключения
+        data = self.get_spread_response(slug_name=slug)
+        if data:  # может вернуться None
+            for item in data:
+                if item["marketPair"].split("/")[1] in self.stable:  # пары только со стэйблами
+                    exchange = item["exchangeName"]
+                    pair = item["marketPair"]
+                    price = item["price"]
+                    volume_usd = item["volumeUsd"]
+                    market_reputation = item["marketReputation"]
+                    market_url = item["marketUrl"]  # всегда оставлять последним
+                    if exchange not in exemption_exchanges:  # биржа не должна быть в списке исключений
+                        if market_reputation >= 0.5:  # у биржи должен быть рейтинг выше 50%
+                            yield symbol, name, exchange, pair, price, \
+                                volume_usd, market_reputation, market_url
+
 
     def collect_tokens_list(self, exchange_list: list):
         """Для cбора монет, торгующихся на заданных биржах.
@@ -129,15 +164,12 @@ class MainParser:
             return list(set(tokens_list))
 
 
-
-
-
 if __name__ == '__main__':
     parser = MainParser()
     symbol = "WLKN"
     # d = parser.get_spread_data(symbol)
-    exchange_list = ['Binance', 'Bybit']
-    d = parser.collect_tokens_list(exchange_list)
+    # exchange_list = ['Binance', 'Bybit']
+    d = parser.get_zazam_tokens()
 
 
     print(1)
