@@ -61,10 +61,15 @@ class CdekParser(DellineParser):
 class JDEParser(DellineParser):
     def __init__(self):
         super().__init__()
-        self.url = 'https://api.jde.ru/vD/calculator/price'
+        self.url = ''
         self.headers = {"Content-Type": "application/json"}
 
     def jde_get_data(self, params):
+        if params.get("from_kladr"):
+            self.url = f"https://api.jde.ru/vD/calculator/PriceAddress"
+        else:
+            self.url = f"https://api.jde.ru/vD/calculator/price"
+
         response = requests.get(self.url, headers=self.headers, params=params).json()
 
         if response["result"] == '1':

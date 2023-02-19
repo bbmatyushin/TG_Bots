@@ -32,6 +32,12 @@ class GetParserParams:
         :param insurance:
         :param arrival_city:
         :param derival_city:
+        :param delivery_arrival_variant - доставка до терминала или адреса
+        :param delivery_derival_variant
+        :param derival_city_kladr
+        :param arrival_city_kladr
+        :param arrival_street_kladr
+        :param derival_street_kladr
         :return:
         """
         # Если место одно, то объём считается сам, иначе нужно задать общ.объём
@@ -43,25 +49,56 @@ class GetParserParams:
             total_volume = kwargs.get("total_volume")
             total_weight = kwargs.get("total_weight")
 
-        # Не задан параметр - packages - это вид упаковки
-        params = {
-            "appkey": self.api_delline,
-            "delivery": {
+        delivery = {}
+        if kwargs.get("delivery_arrival_variant") == 'terminal' and \
+                kwargs.get("delivery_derival_variant") == 'terminal':
+            delivery = {
                 "deliveryType": {
                     "type": kwargs.get("delivery_type", "auto")  # "auto"- автодоставка; "express" - экспресс-доставка;
                 },
                 "arrival": {
-                    "variant": kwargs.get("delivery_variant", "terminal"),  # "address" - доставка груза до адреса
+                    "variant": kwargs.get("delivery_arrival_variant", "terminal"),  # "address" - доставка груза до адреса
                     "terminalID": \
                         self.delline_term_kladr_info[kwargs.get("arrival_city")]["terminal_id"]
                 },
                 "derival": {
                     "produceDate": str(self.today),
-                    "variant": kwargs.get("delivery_variant", "terminal"),  # "address" - доставка груза до адреса
+                    "variant": kwargs.get("delivery_derival_variant", "terminal"),  # "address" - доставка груза до адреса
                     "terminalID": \
                         self.delline_term_kladr_info[kwargs.get("derival_city")]["terminal_id"]
                 }
-            },
+            }
+        elif kwargs.get("delivery_arrival_variant") == 'address' and \
+                kwargs.get("delivery_derival_variant") == 'terminal':  # доставка Терминал-Адрес
+            delivery = {
+                "deliveryType": {
+                    "type": kwargs.get("delivery_type", "auto")  # "auto"- автодоставка; "express" - экспресс-доставка;
+                },
+                "arrival": {
+                    "variant": kwargs.get("delivery_arrival_variant", "terminal"),
+                    "address": {
+                        "street": kwargs.get("arrival_street_kladr")
+                    },
+                    # "city": kwargs.get("arrival_city_kladr"),
+                    "time": {      # обязательный параметр при доставки до адреса
+                        "worktimeStart": "8:30",
+                        "worktimeEnd": "16:00",
+                        "exactTime": False
+                    },
+                },
+                "derival": {
+                    "produceDate": str(self.today),
+                    "variant": kwargs.get("delivery_derival_variant", "terminal"),
+                    # "address" - доставка груза до адреса
+                    "terminalID": \
+                        self.delline_term_kladr_info[kwargs.get("derival_city")]["terminal_id"]
+                }
+            }
+
+        # Не задан параметр - packages - это вид упаковки
+        params = {
+            "appkey": self.api_delline,
+            "delivery": delivery,
             "cargo": {
                 "quantity": int(kwargs.get("quantity")),  # integer
                 "length": float(kwargs.get('length')),  # float
@@ -92,9 +129,11 @@ class GetParserParams:
         :param insurance:
         :param derival_city:
         :param arrival_city:
+        :param delivery_arrival_variant: - доставка до терминала или адреса
+        :param delivery_derival_variant:
         :return: 
         """
-
+        dispatch, destination = {}, {}  # откуда и куда
         if int(kwargs.get("quantity")) == 1:
             total_volume = str(float(kwargs.get("length")) * float(kwargs.get("width")) *
                                float(kwargs.get("height")))
@@ -102,6 +141,39 @@ class GetParserParams:
         else:
             total_volume = kwargs.get("total_volume")
             total_weight = kwargs.get("total_weight")
+
+        if kwargs.get("delivery_arrival_variant") == 'terminal' and \
+                kwargs.get("delivery_derival_variant") == 'terminal':
+            dispatch = {
+                "point": {
+                    "location": kwargs.get("derival_city"),
+                    "terminal": "default"  # терминал по умолчанию
+                }
+            }
+            destination = {  # куда
+                "point": {
+                    "location": kwargs.get("arrival_city"),
+                    "terminal": "default"  # терминал по умолчанию
+                }
+            }
+        elif kwargs.get("delivery_arrival_variant") == 'address' and \
+                kwargs.get("delivery_derival_variant") == 'terminal':
+            dispatch = {
+                "point": {
+                    "location": kwargs.get("derival_city"),
+                    "terminal": "default"  # терминал по умолчанию
+                }
+            }
+            destination = {  # куда
+                "point": {
+                    "location": kwargs.get("arrival_city"),
+                    "address": "",
+                    "time": {
+                        "start": "08:30",
+                        "end": "15:30"
+                    }
+                }
+            }
 
         params = {
             "object": "price",
@@ -122,18 +194,8 @@ class GetParserParams:
                     "insurance": float(kwargs.get("insurance"))
                 },
                 "gateway": {
-                    "dispatch": {  # откуда
-                        "point": {
-                            "location": kwargs.get("derival_city"),
-                            "terminal": "default"  # терминал по умолчанию
-                        }
-                    },
-                    "destination": {  # куда
-                        "point": {
-                            "location": kwargs.get("arrival_city"),
-                            "terminal": "default"  # терминал по умолчанию
-                        }
-                    }
+                    "dispatch": dispatch,
+                    "destination": destination
                 }
             }
         }
@@ -171,8 +233,11 @@ class GetParserParams:
         :param weight
         :param derival_city
         :param arrival_city
+        :param delivery_type - auto / express
+        :param delivery_arrival_variant: - доставка до терминала или адреса
+        :param delivery_derival_variant:
         """
-
+        tariff_code = 136
         derival_city_code = self.cdek_get_cities_info(kwargs.get("derival_city"))["city_code"]
         arrival_city_code = self.cdek_get_cities_info(kwargs.get("arrival_city"))["city_code"]
 
@@ -182,9 +247,16 @@ class GetParserParams:
                                                 round(float(kwargs.get("height")) * 100, 0)])
         weight_kg = int(round(float(kwargs.get("weight")) * 1000, 0))
 
+        if kwargs.get("delivery_arrival_variant") == 'terminal' and \
+                kwargs.get("delivery_derival_variant") == 'terminal':
+            tariff_code = 483 if kwargs.get("delivery_type") == 'express' else 136
+        elif kwargs.get("delivery_arrival_variant") == 'address' and \
+                kwargs.get("delivery_derival_variant") == 'terminal':
+            tariff_code = 482 if kwargs.get("delivery_type") == 'express' else 137
+
         params = {
             "type": 1,  # - "интернет-магазин", type 2 - "доставка"
-            "tariff_code": kwargs.get("tariff_code", 136),  # код для тарифа доставки. 136 - Склад-Склад
+            "tariff_code": tariff_code,  # код для тарифа доставки. 136 - Склад-Склад
             "from_location": {
                 "code": derival_city_code,
                 "city": kwargs.get("derival_city")
@@ -209,8 +281,7 @@ class GetParserParams:
 
         return params
 
-    def jde_params(self, pickup='0', delivery='0',
-                   services='', **kwargs):
+    def jde_params(self, services='', **kwargs):
         """Инфа тут - https://api.jde.ru/dev/api/calculator/calculate-service-cost-smart.html
 
         url_for_type = 'https://api.jde.ru/vD/calculator/PriceTypeListAvailable'
@@ -251,7 +322,14 @@ class GetParserParams:
         :param user
         :param token
 
+        :param delivery_arrival_variant: - доставка до терминала или адреса
+        :param delivery_derival_variant:
+        :param arrival_city_kladr=
+        :param derival_city_kladr=
+
         """
+        get_params = {}
+
         if int(kwargs.get("quantity")) == 1:
             total_volume = str(float(kwargs.get("length")) * float(kwargs.get("width")) *
                                float(kwargs.get("height")))
@@ -259,6 +337,14 @@ class GetParserParams:
         else:
             total_volume = kwargs.get("total_volume")
             total_weight = kwargs.get("total_weight")
+
+        pickup, delivery = '0', '0'  # при услокии доставки Терминал - Терминал
+        if kwargs.get("delivery_arrival_variant") == 'address' and \
+                kwargs.get("delivery_derival_variant") == 'terminal':
+            derival_city_kladr = kwargs.get("derival_city_kladr")[:-12]  # -12 т.к. инфа подтягивается с Деловых
+            arrival_city_kladr = kwargs.get("arrival_city_kladr")[:-12]  # у них свой формат
+            pickup, delivery = '0', '1'
+
 
         params = {
             "from": kwargs.get("derival_city"),

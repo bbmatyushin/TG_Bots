@@ -3,7 +3,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 """ =============  KeyBoards  ============= """
-kb = ReplyKeyboardMarkup([
+kb_restart = ReplyKeyboardMarkup([
     [KeyboardButton(text='Перезапустить')]
 ],
     resize_keyboard=True, one_time_keyboard=True)

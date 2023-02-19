@@ -4,12 +4,19 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 class FSMMain(StatesGroup):
     shipment_choice_1 = State()
     derival_city = State()
+    check_derival_city = State()
+    derival_city_full_name = State()
     arrival_city = State()
+    check_arrival_city = State()
+    arrival_city_full_name = State()
     calc_method_choice = State()
     quick_calc = State()  # пока это состояние не нужно, т.к. расчет происходит сразу после нажатия кнопки, пото м всё заново
     features_calc = State()
     cargo_choice_quantity = State()
     choise_express = State()
+    delivery_derival_variant = State()  # terminal/address
+    delivery_arrival_variant = State()  # terminal/address
+    terminal_to_address = State()
 
 
 class FSMQuantityOne(StatesGroup):
