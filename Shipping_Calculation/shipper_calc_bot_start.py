@@ -3,7 +3,7 @@ import logging
 from aiogram.utils import executor
 
 from data_files.create_bot import dp, bot
-from handlers import main_handlers, restart_handler, choice_quantity_one, choice_quantity_some
+from handlers import main_handlers, choice_quantity_one, choice_quantity_some
 
 
 async def on_startup(_):
@@ -16,7 +16,6 @@ async def on_shutdown(dp):
 
 
 if __name__ == "__main__":
-    restart_handler.register_handler(dp)
     choice_quantity_one.register_handlers(dp)
     choice_quantity_some.register_handlers(dp)
     executor.start_polling(dp, timeout=120, skip_updates=True,

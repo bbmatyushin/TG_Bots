@@ -99,6 +99,10 @@ async def get_shipping_calc(callback: types.CallbackQuery, state: FSMContext):
     total_weight, total_volume, quantity, weight, insurance, delivery_type = \
         '0', '0', data["cargo_quantity"], data["cargo_weight"], data["cargo_insurance"], \
             data["delivery_type"]
+    delivery_derival_variant = data["delivery_derival_variant"]
+    delivery_arrival_variant = data["delivery_arrival_variant"]
+    derival_city_full_name = data["derival_city_full_name"]
+    arrival_city_full_name = data["arrival_city_full_name"]
 
     await callback.message.answer(text=f"🧮 Сравнивается стоимость доставки между ТК "
                               f"*{', '.join(shipper_list_full_name)}*...\n"
@@ -110,7 +114,11 @@ async def get_shipping_calc(callback: types.CallbackQuery, state: FSMContext):
                            quantity=quantity, total_weight=total_weight,
                            total_volume=total_volume, insurance=insurance,
                            delivery_type=delivery_type,
-                           derival_city=data["derival_city"], arrival_city=data["arrival_city"])
+                           derival_city=data["derival_city"], arrival_city=data["arrival_city"],
+                           delivery_derival_variant=delivery_derival_variant,
+                           delivery_arrival_variant=delivery_arrival_variant,
+                           derival_city_full_name=derival_city_full_name,
+                           arrival_city_full_name=arrival_city_full_name)
     await callback.message.answer(result_answer, parse_mode="Markdown")
     await callback.answer()
     await state.finish()  # выходим из машинного состояния
