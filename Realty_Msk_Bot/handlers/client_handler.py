@@ -20,8 +20,8 @@ async def command_start(message: types.Message, state: FSMContext):
                                 "Можно ввести первые 3-4 буквы для получения подсказки.\n\n"
                                 "Информация берется с сайтов:\n"
                                 "<a href='https://flatinfo.ru/'>FlatInfo</a>, "
-                                "<a href='https://dom.mingkh.ru/'>ДОМ.МИНЖКХ</a> <em>(скоро)</em>, "
-                                "<a href='https://dom.mos.ru/Home'>Дома Москвы</a> <em>(скоро)</em>.",
+                                "<a href='https://dom.mingkh.ru/'>ДОМ.МИНЖКХ</a>, "
+                                "<a href='https://dom.mos.ru/Home'>Дома Москвы</a>.",
                            parse_mode="HTML"
                            )
     await message.answer(text="Напишите название улицы:")
@@ -49,7 +49,7 @@ async def get_streen_name(message: types.Message, state: FSMContext):
                             reply_markup=kb.get_address_kb(addr_list=addr_data))
         await state.reset_data()
     elif isinstance(addr_data, dict):
-        await message.answer(build_data.output_info(data_flainfo=addr_data, full_address=address),
+        await message.answer(build_data.output_info(addr_data_flainfo=addr_data, full_address=address),
                              parse_mode="HTML", reply_markup=kb.kb_start)
         await state.reset_data()
         await message.answer(text="Напишите название улицы:")

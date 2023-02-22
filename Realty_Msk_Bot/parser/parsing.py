@@ -34,7 +34,7 @@ class FlatInfoParser:
 
 class DomMinGkhParser:
     def __init__(self):
-        self.main_url = 'https://dom.mingkh.ru'
+        self.main_mingkh_url = 'https://dom.mingkh.ru'
         self.headers = Headers().generate()
 
     def mingkh_get_address_url(self, address):
@@ -58,7 +58,7 @@ class DomMinGkhParser:
                 if re.search(f'{city}', data[i].text, flags=re.ASCII):
                     if re.search(f'\\b({str_part1})\\b.*\\b({str_part2})\\b', data[i + 1].text.lower()):
                         # получаем ссылку на страницу строения
-                        return self.main_url + data[i + 1].find("a")["href"]
+                        return self.main_mingkh_url + data[i + 1].find("a")["href"]
             return False
 
     def mingkh_get_building_data(self, url):
@@ -71,15 +71,60 @@ class DomMinGkhParser:
             return "Bab response ¯\_(ツ)_/¯"
 
 
+class DomMosParser:
+    def __init__(self):
+        self.main_dommos_url = 'https://dom.mos.ru'
+        self.search_url_dommos = 'https://dom.mos.ru/Lookups/GetSearchAutoComplete'
+        self.headers = Headers().generate()
+        #?term=проезд Серебрякова, дом 1/2&section=Buildings'
+
+    def dommos_get_building_url(self, address: str):
+        """Получить url здания по его адресу.
+        В адресе не должно быть города, только улица."""
+
+        addr_list = address.split(",")
+        city = addr_list[0].strip()
+        street = addr_list[1].strip()
+        # Разделяем адрес на 2 части, чтобы собрать патерн для регулярки
+        str_format = street.replace(" дом", ", дом").strip().split(", ")
+        str_part1, str_part2 = str_format[0], re.findall(r'\b(\D+\d+)\b', str_format[1])
+        patern = ").*(".join([str_part1, *str_part2])
+
+        params = {
+            "term": street,
+            "section": "Buildings"
+        }
+        response = requests.get(url=self.search_url_dommos, headers=self.headers, params=params)
+
+        if city == 'Москва':  # ищем только Для москвы
+            if response.status_code == 200:
+                for el in response.json():
+                    url = f'{self.main_dommos_url}{el["url"]}' if re.search(f'({patern})', el.get('value')) else None
+                    return re.sub(r'Details/', r'Passport?pk=', url) if url else None
+            else:
+                return None
+        else:
+            return None
+
+    def dommos_get_building_data(self, url):
+        response = requests.get(url=url, headers=self.headers)
+
+        soup = BeautifulSoup(response.text, 'lxml')
+        data = soup.find("div", class_="rndBrdBlock mrgT18")
+
+        return data
+
+
 if __name__ == "__main__":
     # parser = FlatInfoParser()
-    parser = DomMinGkhParser()
-    addr = 'Москва, проезд Серебрякова дом 1/2'
-    url_b = 'https://dom.mingkh.ru/moskva/moskva/404449'  # for example
-    # response = parser.flat_get_address_url(address=addr)
-    data = parser.mingkh_get_address_url(addr)
+    # parser = DomMinGkhParser()
+    parser = DomMosParser()
+    addr = 'Москва, 5-й Донской проезд дом 21 корпус 9'
+    url_b = 'https://dom.mos.ru/Building/Details/dc722b5c-f9dc-4a59-b24b-5b72661eba7a'  # for example
+    response = parser.dommos_get_building_url(address=addr)
+    # data = parser.dommos_get_building_data(url_b)
 
-    print(data)
+    # print(data)
 
     #Москва, 5-й Донской проезд дом 21 корпус 9
 

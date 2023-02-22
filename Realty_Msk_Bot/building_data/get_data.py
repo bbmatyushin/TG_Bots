@@ -1,7 +1,9 @@
-from parser.parsing import FlatInfoParser, DomMinGkhParser
+import re
+
+from parser.parsing import FlatInfoParser, DomMinGkhParser, DomMosParser
 
 
-class BuildingData(FlatInfoParser, DomMinGkhParser):
+class BuildingData(FlatInfoParser, DomMinGkhParser, DomMosParser):
     """В FlatInfoParser().get_building_data получаем данные по зданию"""
     def __init__(self):
         super().__init__()
@@ -13,7 +15,7 @@ class BuildingData(FlatInfoParser, DomMinGkhParser):
         addr_data = self.flat_get_address_url(address=address)
         if len(addr_data) == 1:
             # return name, url, id, coords
-            return addr_data[0] if addr_data[0].get("url") else False
+            return addr_data[0] if addr_data[0].get("url") else [addr_data[0]["name"]]
         elif address.strip() in [addr["name"] for addr in addr_data]:
             for i in range(len(addr_data)):
                 if addr_data[i]["name"] == address:
@@ -75,12 +77,34 @@ class BuildingData(FlatInfoParser, DomMinGkhParser):
 
         return mingkh_dict
 
+    def dommos_data(self, url):
+        dommos_dict = {}
+        data = self.dommos_get_building_data(url=url)
+        # Нужного параметра может не быть, тогда значение None
+        dommos_dict["Назначение:"] = f'многоквартирный дом' \
+            if data.find("h1", string=re.compile('Общие сведения о многоквартирном доме')) else None
+        dommos_dict["Год постройки:"] = data.find(string=re.compile('Год постройки')).next_element.next_element.text\
+            if data.find(string=re.compile('Год постройки')) else None
+        dommos_dict["Типовая серия:"] = data.find(string=re.compile('Серия проекта')).next_element.next_element.text\
+            if data.find(string=re.compile('Серия проекта')) else None
+        #TODO: Смотреть как будет отрабатывать
+        dommos_dict["Этажей всего:"] = data.find(string=re.compile('наибольшее')).next_element.next_element.text\
+            if data.find(string=re.compile('наибольшее')) else None
+        dommos_dict["Подвальных этажей:"] = data.find(string=re.compile('Количество технических подвалов'))\
+            .next_element.next_element.text if data.find(string=re.compile('Количество технических подвалов')) \
+            else None
+        dommos_dict["Подъездов:"] = data.find(string=re.compile('Количество подъездов')).next_element\
+            .next_element.text if data.find(string=re.compile('Количество подъездов')) else None
+
+        return dommos_dict
+
 
 
 if __name__ == "__main__":
-    url = 'https://dom.mingkh.ru/moskva/moskva/1185883'
+    # url = 'https://dom.mos.ru/Building/Details/cb9c42b4-6ecd-4415-a125-d871fa1b3997'
+    url = 'https://dom.mos.ru/Building/Passport?pk=cb9c42b4-6ecd-4415-a125-d871fa1b3997'
     full_addr = 'Москва, 1-й Тверской-Ямской переулок дом 11'
     # data = BuildingData().get_addr_data(address=full_addr)
-    data = BuildingData().mingkh_data(url=url)
+    data = BuildingData().dommos_data(url=url)
     print(data)
 
