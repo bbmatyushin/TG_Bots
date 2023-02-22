@@ -47,10 +47,12 @@ async def get_streen_name(message: types.Message, state: FSMContext):
     if isinstance(addr_data, list):
         await message.reply(text="Уточните адресс:",
                             reply_markup=kb.get_address_kb(addr_list=addr_data))
+        await state.reset_data()
     elif isinstance(addr_data, dict):
         await message.answer(build_data.output_info(data_flainfo=addr_data, full_address=address),
                              parse_mode="HTML", reply_markup=kb.kb_start)
         await state.reset_data()
+        await message.answer(text="Напишите название улицы:")
         # await message.answer(text="Напишите название улицы:")
     else:
         await message.reply(text=f"Не получилось найти данных по запросу *{message.text}*.\n"
