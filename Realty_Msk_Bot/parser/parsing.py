@@ -42,9 +42,9 @@ class DomMinGkhParser:
         ДОМ.МИНЖКХ и вытаскиваем ссылку на страницу здания"""
         addr_list = address.split(",")
         city = addr_list[0].strip()
-        street = addr_list[1].strip().replace("улица", "").replace("дом", "").replace("переулок", '')\
-            .replace("бульвар", "").replace("владение", "").strip()
-        street = re.sub("\s+", " ", street).lower()
+        street = re.sub(r'\s+', ' ', re.sub(r'\b(?:улица|дом|переулок|бульвар|владение|шоссе|проезд)\b', '',
+                                            addr_list[1])).lower().strip().split()
+        str_part1, str_part2 = street[0], street[1]  # нужны для формирования патерна для regex
         url = 'https://dom.mingkh.ru/search'
         params = {
             "address": address,
@@ -55,9 +55,8 @@ class DomMinGkhParser:
             soup = BeautifulSoup(response.text, 'lxml')
             data = soup.find("tbody").find_all("td")
             for i in range(len(data) - 1):
-                if city in data[i].text:
-                    if street in re.sub("\s+", " ", data[i + 1].text.replace("пер.", "").replace(",", '')
-                                        .replace("б-р", '')).lower():
+                if re.search(f'{city}', data[i].text, flags=re.ASCII):
+                    if re.search(f'\\b({str_part1})\\b.*\\b({str_part2})\\b', data[i + 1].text.lower()):
                         # получаем ссылку на страницу строения
                         return self.main_url + data[i + 1].find("a")["href"]
             return False
@@ -75,10 +74,10 @@ class DomMinGkhParser:
 if __name__ == "__main__":
     # parser = FlatInfoParser()
     parser = DomMinGkhParser()
-    addr = 'Москва, бульвар Дмитрия Донского дом 17'
+    addr = 'Москва, проезд Серебрякова дом 1/2'
     url_b = 'https://dom.mingkh.ru/moskva/moskva/404449'  # for example
     # response = parser.flat_get_address_url(address=addr)
-    data = parser.mingkh_get_building_data(url=url_b)
+    data = parser.mingkh_get_address_url(addr)
 
     print(data)
 

@@ -5,11 +5,11 @@ class BuildingData(FlatInfoParser, DomMinGkhParser):
     """В FlatInfoParser().get_building_data получаем данные по зданию"""
     def __init__(self):
         super().__init__()
-        self.flatinfo_output = []
+        self.output_result = []
 
     def get_addr_data(self, address):
         """Здесь происходит поиск нужного адреса через сайт flatinfo.ru
-        Если точный адрес не найден, то бот предложит список возмодных адресов для уточнения."""
+        Если точный адрес не найден, то бот предложит список возможных адресов для уточнения."""
         addr_data = self.flat_get_address_url(address=address)
         if len(addr_data) == 1:
             # return name, url, id, coords
