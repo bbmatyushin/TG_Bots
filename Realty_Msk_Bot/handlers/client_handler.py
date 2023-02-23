@@ -6,7 +6,6 @@ from handlers.state_classes import FSMMain
 from keyboards import kb_button as kb
 from building_data.output_data import OutputData
 
-#
 
 @dp.message_handler(lambda msg: msg.text.lower() in ["старт", "start", "/start"],
                     content_types=["text"], state="*")
@@ -45,18 +44,17 @@ async def get_streen_name(message: types.Message, state: FSMContext):
     address = data["type_address_name"]
     addr_data = build_data.get_addr_data(address=address)
     if isinstance(addr_data, list):
-        await message.reply(text="Уточните адресс:",
+        await message.reply(text="❓ Уточните адресс:",
                             reply_markup=kb.get_address_kb(addr_list=addr_data))
         await state.reset_data()
     elif isinstance(addr_data, dict):
-        await message.answer(build_data.output_info(addr_data_flainfo=addr_data, full_address=address),
+        await message.answer(text=f"🔍 Начался сбор информации об объекте расположенному по адрессу - "
+                                  f"*{message.text}*", parse_mode='Markdown')
+        await message.answer(build_data.get_output_result(addr_data_flainfo=addr_data, full_address=address),
                              parse_mode="HTML", reply_markup=kb.kb_start)
         await state.reset_data()
         await message.answer(text="Напишите название улицы:")
-        # await message.answer(text="Напишите название улицы:")
     else:
         await message.reply(text=f"Не получилось найти данных по запросу *{message.text}*.\n"
                            f"Попробуйте ещё раз.", parse_mode="Markdown")
         await state.reset_data()
-
-
