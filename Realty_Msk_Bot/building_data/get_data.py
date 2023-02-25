@@ -103,8 +103,8 @@ class BuildingData(FlatInfoParser, DomMinGkhParser, DomMosParser):
 if __name__ == "__main__":
     # url = 'https://dom.mos.ru/Building/Details/cb9c42b4-6ecd-4415-a125-d871fa1b3997'
     url = 'https://dom.mos.ru/Building/Passport?pk=cb9c42b4-6ecd-4415-a125-d871fa1b3997'
-    full_addr = 'Москва, 1-й Тверской-Ямской переулок дом 11'
-    # data = BuildingData().get_addr_data(address=full_addr)
-    data = BuildingData().dommos_data(url=url)
+    full_addr = 'Москва, Мининский переулок'
+    data = BuildingData().get_addr_data(address=full_addr)
+    # data = BuildingData().dommos_data(url=url)
     print(data)
 

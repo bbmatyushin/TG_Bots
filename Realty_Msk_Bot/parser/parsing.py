@@ -1,5 +1,6 @@
 import requests
 import re
+import time
 from bs4 import BeautifulSoup
 from fake_headers import Headers
 
@@ -14,8 +15,34 @@ class FlatInfoParser:
         params = {"term": address}
         response = requests.get(url, headers=self.headers, params=params)
         if response.status_code == 200:
-            address_info = response.json()["list"]
-            return address_info
+            if not response.json()["list"] and response.json()["url"]:
+                url = response.json()["url"]
+                return self.flat_check_url(url=url)
+            elif response.json()["list"]:
+                return response.json()["list"]
+            elif not response.json()["list"] and not response.json()["url"]:
+                return []
+        else:
+            return False
+
+    def flat_check_url(self, url):
+        """КОСТЫЛЬ. Если есть единственный url, то заходим на эту страницу
+        и вытаскиваем адресс, чтобы ещё раз через поиск его пропустить"""
+        session = requests.Session()
+        session.headers.update(self.headers)
+        # time.sleep(1)
+        res = session.get(url=url, headers=self.headers)
+        soup = BeautifulSoup(res.text, 'lxml')
+        get_addr = soup.find("h1", string=re.compile('[Оо] дом?')).text
+        addr_parts = re.sub(r'[Оо] доме', '', get_addr).strip().split(' в ')
+        new_addr = f"{addr_parts[1]}, {addr_parts[0]}"
+        url = 'https://flatinfo.ru/services/adres_response.php'
+        params = {"term": new_addr}
+        time.sleep(1)
+        response = session.get(url, headers=self.headers, params=params)
+        if response.status_code == 200:
+            if response.json()["list"]:
+                return response.json()["list"]
         else:
             return False
 
@@ -42,9 +69,11 @@ class DomMinGkhParser:
         ДОМ.МИНЖКХ и вытаскиваем ссылку на страницу здания"""
         addr_list = address.split(",")
         city = addr_list[0].strip()
-        street = re.sub(r'\s+', ' ', re.sub(r'\b(?:улица|дом|переулок|бульвар|владение|шоссе|проезд)\b', '',
-                                            addr_list[1])).lower().strip().split()
-        str_part1, str_part2 = street[0], street[1]  # нужны для формирования патерна для regex
+        street = re.sub(r'\s+', ' ', re.sub(r'\b(?:улица|дом|переулок|бульвар|владение|шоссе|проезд|корпус)\b', '',
+                                            addr_list[1])).strip()#.split()
+        street_name = re.search(r'[а-яёА-ЯЁ\s-]+', street)[0].strip()  # нужны для формирования патерна для regex
+        house_num = re.sub(r'\s+', ' ', street.replace(street_name, "").strip())
+        # house_num = re.findall(r'\d+|\d+[а-яёА-ЯЁ]+', street)
         url = 'https://dom.mingkh.ru/search'
         params = {
             "address": address,
@@ -55,8 +84,8 @@ class DomMinGkhParser:
             soup = BeautifulSoup(response.text, 'lxml')
             data = soup.find("tbody").find_all("td")
             for i in range(len(data) - 1):
-                if re.search(f'{city}', data[i].text, flags=re.ASCII):
-                    if re.search(f'\\b({str_part1})\\b.*\\b({str_part2})\\b', data[i + 1].text.lower()):
+                if re.search(f'{city}', data[i].text):
+                    if re.search(f'\\b({street_name})\\b.*({re.sub(" ", ".*", house_num)})', data[i + 1].text):
                         # получаем ссылку на страницу строения
                         return self.main_mingkh_url + data[i + 1].find("a")["href"]
             return False
@@ -117,14 +146,13 @@ class DomMosParser:
 
 if __name__ == "__main__":
     # parser = FlatInfoParser()
-    # parser = DomMinGkhParser()
-    parser = DomMosParser()
-    addr = 'Москва, 5-й Донской проезд дом 21 корпус 9'
+    parser = DomMinGkhParser()
+    # parser = DomMosParser()
+    addr = 'Москва, проезд Соломенной Сторожки дом 5 корпус 1'  #TODO: Москва, Новолесная улица 17А - плохо отработало на ДОМ.МИНЖКХ (выдача 17/21)
     url_b = 'https://dom.mos.ru/Building/Details/dc722b5c-f9dc-4a59-b24b-5b72661eba7a'  # for example
-    response = parser.dommos_get_building_url(address=addr)
-    # data = parser.dommos_get_building_data(url_b)
+    data = parser.mingkh_get_address_url(address=addr)
 
-    # print(data)
+    print(data)
 
     #Москва, 5-й Донской проезд дом 21 корпус 9
 
