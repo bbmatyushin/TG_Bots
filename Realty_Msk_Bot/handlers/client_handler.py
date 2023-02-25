@@ -1,3 +1,4 @@
+import re
 from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 
@@ -20,7 +21,8 @@ async def command_start(message: types.Message, state: FSMContext):
                                 "Информация берется с сайтов:\n"
                                 "<a href='https://flatinfo.ru/'>FlatInfo</a>, "
                                 "<a href='https://dom.mingkh.ru/'>ДОМ.МИНЖКХ</a>, "
-                                "<a href='https://dom.mos.ru/Home'>Дома Москвы</a>.",
+                                "<a href='https://dom.mos.ru/Home'>Дома Москвы</a>.\n\n"
+                                "❗️ Для перезапуска бота, отправьте в сообщении <b>старт</b> или <b>start</b>.",
                            parse_mode="HTML"
                            )
     await message.answer(text="Напишите название улицы:")
@@ -38,23 +40,36 @@ async def command_start(message: types.Message, state: FSMContext):
 
 @dp.message_handler(content_types=["text"], state=FSMMain.type_address_name)
 async def get_streen_name(message: types.Message, state: FSMContext):
-    build_data = OutputData()
-    async with state.proxy() as data:
-        data["type_address_name"] = message.text
-    address = data["type_address_name"]
-    addr_data = build_data.get_addr_data(address=address)
-    if isinstance(addr_data, list):
-        await message.reply(text="❓ Уточните адресс:",
-                            reply_markup=kb.get_address_kb(addr_list=addr_data))
-        await state.reset_data()
-    elif isinstance(addr_data, dict):
-        await message.answer(text=f"🔍 Начался сбор информации об объекте расположенному по адрессу - "
-                                  f"*{message.text}*", parse_mode='Markdown')
-        await message.answer(build_data.get_output_result(addr_data_flainfo=addr_data, full_address=address),
-                             parse_mode="HTML", reply_markup=kb.kb_start)
-        await state.reset_data()
-        await message.answer(text="Напишите название улицы:")
+    if re.search(r'[a-zA-Z]{2,}', message.text):
+       await message.reply(text="🚫 I don't understand English. "
+                                "Please write me a message completely in Russian.")
     else:
-        await message.reply(text=f"Не получилось найти данных по запросу *{message.text}*.\n"
-                           f"Попробуйте ещё раз.", parse_mode="Markdown")
-        await state.reset_data()
+        build_data = OutputData()
+        async with state.proxy() as data:
+            data["type_address_name"] = message.text
+        address = data["type_address_name"]
+        addr_data = build_data.get_addr_data(address=address)
+        if isinstance(addr_data, list):
+            if re.search('дом', addr_data[0]):
+                await message.reply(text="❓ Уточните адрес:",
+                                reply_markup=kb.get_address_kb(addr_list=addr_data))
+            else:
+                await message.reply(text="❓ Уточните улицу:",
+                                reply_markup=kb.get_address_kb(addr_list=addr_data))
+            await state.reset_data()
+        elif isinstance(addr_data, dict):
+            # может сразу прилететь объект dict с одним адресом,
+            # тогда проверяем адрес из него совпадает с message.text
+            # Пример: Москва, Мининский переулок
+            address_search = message.text if message.text == addr_data["name"] else addr_data["name"]
+            await message.answer(text=f"🔍 Начался сбор информации об объекте расположенному по адресу - "
+                                      f"*{address_search}*", parse_mode='Markdown')
+            await message.answer(build_data.get_output_result(addr_data_flainfo=addr_data,
+                                                              full_address=address_search),
+                                 parse_mode="HTML", reply_markup=kb.kb_start)
+            await state.reset_data()
+            await message.answer(text="Напишите название улицы:")
+        else:
+            await message.reply(text=f"👀 Не получилось найти данных по запросу *{message.text}*.\n",
+                                parse_mode="Markdown")
+            await state.reset_data()

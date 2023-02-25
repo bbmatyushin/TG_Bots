@@ -12,7 +12,7 @@ def get_address_kb(addr_list: list) -> ReplyKeyboardMarkup:
         el = addr_list[i:i + 1]
         add_list = [KeyboardButton(f"{n}") for n in el]
         kb_list.append(add_list)
-    kb = ReplyKeyboardMarkup(kb_list[:100], resize_keyboard=True, one_time_keyboard=True)
+    kb = ReplyKeyboardMarkup(kb_list[:50], resize_keyboard=True, one_time_keyboard=True)
 
     return kb
 
