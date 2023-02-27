@@ -17,6 +17,7 @@ class FSMMain(StatesGroup):
     delivery_derival_variant = State()  # terminal/address
     delivery_arrival_variant = State()  # terminal/address
     terminal_to_address = State()
+    handling = State()  # ПРР
 
 
 class FSMQuantityOne(StatesGroup):
@@ -39,6 +40,3 @@ class FSMQuantitySome(StatesGroup):
     delivery_type = State()  # тип доставки - обычная/экспресс
     cargo_dimensions = State()  # размеры
     quantity_some_calc = State()
-
-
-

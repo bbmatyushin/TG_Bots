@@ -20,10 +20,10 @@ class ShippersTerminalCalculation:
         length = '0.4', width = '0.35', height = '0.3', insurance = '50000',
         delivery_type='auto', derival_city = 'Москва', arrival_city = "Санкт-Петербург"""
 
-    def delline_terminal_calc(self, total_volume='0', quantity='1', weight='8', total_weight='0',
+    def delline_calc(self, total_volume='0', quantity='1', weight='8', total_weight='0',
                               length='0.3', width='0.2', height='0.25', insurance='50000',
                               derival_city='Москва', arrival_city="Санкт-Петербург",
-                              delivery_type='auto',
+                              delivery_type='auto', handling='no',
                               derival_city_kladr="", arrival_city_kladr="",
                               delivery_arrival_variant='terminal',
                               delivery_derival_variant='terminal',
@@ -45,7 +45,7 @@ class ShippersTerminalCalculation:
                                             total_weight=total_weight, length=length, width=width,
                                             height=height, insurance=insurance,
                                             derival_city=derival_city, arrival_city=arrival_city,
-                                            delivery_type=delivery_type,
+                                            delivery_type=delivery_type, handling=handling,
                                             derival_city_kladr=derival_city_kladr,
                                             arrival_city_kladr=arrival_city_kladr,
                                             delivery_arrival_variant=delivery_arrival_variant,
@@ -66,16 +66,16 @@ class ShippersTerminalCalculation:
         else:
             return data
 
-    def vozovoz_terminal_calc(self, quantity='1', weight='8', length='0.3', width='0.2', height='0.25',
-                              total_weight='10', total_volume='0', insurance='100000',
-                              derival_city='Москва', arrival_city="Санкт-Петербург",
-                              delivery_arrival_variant='terminal',
-                              delivery_derival_variant='terminal'):
+    def vozovoz_calc(self, quantity='1', weight='8', length='0.3', width='0.2', height='0.25',
+                     total_weight='10', total_volume='0', insurance='100000',
+                     derival_city='Москва', arrival_city="Санкт-Петербург",
+                     delivery_arrival_variant='terminal', delivery_derival_variant='terminal',
+                     handling='no'):
 
         params = self.params.vozovoz_params(quantity=quantity, weight=weight,
                                             length=length, width=width, height=height,
                                             total_weight=total_weight, total_volume=total_volume,
-                                            insurance=insurance,
+                                            insurance=insurance, handling=handling,
                                             derival_city=derival_city, arrival_city=arrival_city,
                                             delivery_arrival_variant=delivery_arrival_variant,
                                             delivery_derival_variant=delivery_derival_variant)
@@ -96,12 +96,12 @@ class ShippersTerminalCalculation:
             else:  # если даты разные то вернем сроки в виде 1-4
                 return price, "-".join(map(str, [date_from, date_to]))
 
-    def cdek_terminal_calc(self, weight='8', length='0.3', width='0.2', height='0.25',
-                           delivery_type='auto', insurance='100000',
-                           derival_city='Москва', arrival_city="Санкт-Петербург",
-                           delivery_arrival_variant='terminal',
-                           delivery_derival_variant='terminal'
-                           ):
+    def cdek_calc(self, weight='8', length='0.3', width='0.2', height='0.25',
+                  delivery_type='auto', insurance='100000',
+                  derival_city='Москва', arrival_city="Санкт-Петербург",
+                  delivery_arrival_variant='terminal',
+                  delivery_derival_variant='terminal'
+                  ):
         """Тариф для расчета = Посылка склад-склад, режим доставки = склад -склад - это код 136
         код 483 - Экспресс склад-склад (https://api-docs.cdek.ru/63345519.html) """
 
@@ -129,8 +129,7 @@ class ShippersTerminalCalculation:
                  total_weight='10', total_volume='0', insurance='100000',
                  derival_city='Москва', arrival_city="Санкт-Петербург",
                  delivery_type='auto',  # такое значение как в Деловых для однообразия
-                 services='',
-                 delivery_arrival_variant='terminal',
+                 handling='no', delivery_arrival_variant='terminal',
                  delivery_derival_variant='terminal',
                  arrival_city_kladr='', derival_city_kladr=''
                  ):
@@ -141,7 +140,7 @@ class ShippersTerminalCalculation:
                                         width=width, height=height, total_weight=total_weight,
                                         total_volume=total_volume, insurance=insurance,
                                         derival_city=derival_city, arrival_city=arrival_city,
-                                        type=type, services=services,
+                                        type=type, handling=handling,
                                         delivery_arrival_variant=delivery_arrival_variant,
                                         delivery_derival_variant=delivery_derival_variant,
                                         arrival_city_kladr=arrival_city_kladr,
@@ -161,7 +160,7 @@ class ShippersTerminalCalculation:
             elif isinstance(data, str):
                 return data
         except:
-            return "_Межтерминальная перевозка не осуществляется._"
+            return "_Перевозка не осуществляется._"
 
 
 class TotalTerminalResult(ShippersTerminalCalculation):
@@ -237,20 +236,22 @@ class TotalTerminalResult(ShippersTerminalCalculation):
         return check_city_dict
 
     def dellin_get_result(self, **kwargs):
-        delline_calc = self.delline_terminal_calc(total_volume=kwargs.get("total_volume"),
-                                                  quantity=kwargs.get("quantity"), weight=kwargs.get("weight"),
-                                                  total_weight=kwargs.get("total_weight"),
-                                                  length=kwargs.get("length"), width=kwargs.get("width"),
-                                                  height=kwargs.get("height"), insurance=kwargs.get("insurance"),
-                                                  derival_city_kladr=kwargs.get("derival_city_kladr"),
-                                                  arrival_city_kladr=kwargs.get("arrival_city_kladr"),
-                                                  derival_city=kwargs.get("derival_city"),
-                                                  arrival_city=kwargs.get("arrival_city"),
-                                                  delivery_type=kwargs.get("delivery_type"),
-                                                  delivery_arrival_variant=kwargs.get("delivery_arrival_variant"),
-                                                  delivery_derival_variant=kwargs.get("delivery_derival_variant"),
-                                                  arrival_street_kladr=kwargs.get("arrival_street_kladr"),
-                                                  derival_street_kladr=kwargs.get("derival_street_kladr"))
+        delline_calc = self.delline_calc(total_volume=kwargs.get("total_volume"),
+                                         quantity=kwargs.get("quantity"), weight=kwargs.get("weight"),
+                                         total_weight=kwargs.get("total_weight"),
+                                         length=kwargs.get("length"), width=kwargs.get("width"),
+                                         height=kwargs.get("height"), insurance=kwargs.get("insurance"),
+                                         derival_city_kladr=kwargs.get("derival_city_kladr"),
+                                         arrival_city_kladr=kwargs.get("arrival_city_kladr"),
+                                         derival_city=kwargs.get("derival_city"),
+                                         arrival_city=kwargs.get("arrival_city"),
+                                         delivery_type=kwargs.get("delivery_type"),
+                                         delivery_arrival_variant=kwargs.get("delivery_arrival_variant"),
+                                         delivery_derival_variant=kwargs.get("delivery_derival_variant"),
+                                         arrival_street_kladr=kwargs.get("arrival_street_kladr"),
+                                         derival_street_kladr=kwargs.get("derival_street_kladr"),
+                                         handling=kwargs.get("handling")
+                                         )
         if len(delline_calc) == 2:
             return f'{delline_calc[0]:,} ₽, срок *{delline_calc[1]} дн.*'
         else:
@@ -259,7 +260,7 @@ class TotalTerminalResult(ShippersTerminalCalculation):
     def get_simple_result(self, total_volume='0', total_weight='0', quantity='1', weight='8',
                           length='0.3', width='0.2', height='0.25', insurance='50000',
                           derival_city='Москва', arrival_city="Санкт-Петербург",
-                          delivery_type='auto',
+                          delivery_type='auto', handling='no',
                           services='',  # эти аргументы для Желдорэкспедиции
                           derival_city_full_name='', arrival_city_full_name='',
                           delivery_arrival_variant='terminal',
@@ -288,16 +289,17 @@ class TotalTerminalResult(ShippersTerminalCalculation):
             if all([list(self.delline_cities_terminal.keys()).count(derival_city),
                     list(self.delline_cities_terminal.keys()).count(arrival_city)]):
                 delline_result = self.dellin_get_result(total_volume=total_volume, quantity=quantity, weight=weight,
-                                                      total_weight=total_weight, length=length, width=width,
-                                                      height=height, insurance=insurance,
-                                                      derival_city_kladr=derival_city_kladr,
-                                                      arrival_city_kladr=arrival_city_kladr,
-                                                      derival_city=derival_city, arrival_city=arrival_city,
-                                                      delivery_type=delivery_type,
-                                                      delivery_arrival_variant=delivery_arrival_variant,
-                                                      delivery_derival_variant=delivery_derival_variant,
-                                                      arrival_street_kladr=arrival_street_kladr,
-                                                      derival_street_kladr=derival_street_kladr)
+                                                        total_weight=total_weight, length=length, width=width,
+                                                        height=height, insurance=insurance,
+                                                        derival_city_kladr=derival_city_kladr,
+                                                        arrival_city_kladr=arrival_city_kladr,
+                                                        derival_city=derival_city, arrival_city=arrival_city,
+                                                        delivery_type=delivery_type,
+                                                        delivery_arrival_variant=delivery_arrival_variant,
+                                                        delivery_derival_variant=delivery_derival_variant,
+                                                        arrival_street_kladr=arrival_street_kladr,
+                                                        derival_street_kladr=derival_street_kladr,
+                                                        handling=handling)
             else:
                 delline_result = "_Межтерминальная перевозка не осуществляется._"
         else:
@@ -311,27 +313,28 @@ class TotalTerminalResult(ShippersTerminalCalculation):
                                                     delivery_arrival_variant=delivery_arrival_variant,
                                                     delivery_derival_variant=delivery_derival_variant,
                                                     arrival_street_kladr=arrival_street_kladr,
-                                                    derival_street_kladr=derival_street_kladr)
+                                                    derival_street_kladr=derival_street_kladr,
+                                                    handling=handling)
 
-        vozovoz_calc = self.vozovoz_terminal_calc(quantity=quantity, weight=weight,
-                                                  length=length, width=width, height=height,
-                                                  total_weight=weight, insurance=insurance,
-                                                  derival_city=derival_city, arrival_city=arrival_city,
-                                                  delivery_arrival_variant=delivery_arrival_variant,
-                                                  delivery_derival_variant=delivery_derival_variant,
-                                                  )
+        vozovoz_calc = self.vozovoz_calc(quantity=quantity, weight=weight,
+                                         length=length, width=width, height=height,
+                                         total_weight=weight, insurance=insurance,
+                                         derival_city=derival_city, arrival_city=arrival_city,
+                                         delivery_arrival_variant=delivery_arrival_variant,
+                                         delivery_derival_variant=delivery_derival_variant,
+                                         handling=handling)
         if len(vozovoz_calc) == 2:
             vozovoz_result = f"{vozovoz_calc[0]:,} ₽, срок *{vozovoz_calc[1]} дн.*"
         else:
             vozovoz_result = vozovoz_calc
 
         if quantity == '1':
-            cdek_calc = self.cdek_terminal_calc(weight=weight, length=length, width=width, height=height,
-                                                insurance=insurance, delivery_type=delivery_type,
-                                                derival_city=derival_city, arrival_city=arrival_city,
-                                                delivery_arrival_variant=delivery_arrival_variant,
-                                                delivery_derival_variant=delivery_derival_variant
-                                                )
+            cdek_calc = self.cdek_calc(weight=weight, length=length, width=width, height=height,
+                                       insurance=insurance, delivery_type=delivery_type,
+                                       derival_city=derival_city, arrival_city=arrival_city,
+                                       delivery_arrival_variant=delivery_arrival_variant,
+                                       delivery_derival_variant=delivery_derival_variant
+                                       )
             if len(cdek_calc) == 2:
                 cdek_result = f"{cdek_calc[0]:,} ₽, срок *{cdek_calc[1]} дн.*"
             else:
@@ -343,7 +346,7 @@ class TotalTerminalResult(ShippersTerminalCalculation):
                                  height=height, total_weight=total_weight, total_volume=get_total_volume,
                                  insurance=insurance, derival_city=derival_city, arrival_city=arrival_city,
                                  delivery_type=delivery_type,   # такое значение как в Деловых для однообразия
-                                 services=services,
+                                 handling=handling,
                                  delivery_arrival_variant=delivery_arrival_variant,
                                  delivery_derival_variant=delivery_derival_variant,
                                  arrival_city_kladr=arrival_city_kladr,
@@ -353,11 +356,14 @@ class TotalTerminalResult(ShippersTerminalCalculation):
         else:
             jde_result = jde_calc
 
+        get_handling = '(с учетом ПРР)' if handling == 'yes' else '(без учета ПРР)'
+
         if delivery_arrival_variant == 'terminal' and delivery_derival_variant == 'terminal':
             output_top = [f"Расчет межтерминальной перевозки *{derival_city}* - *{arrival_city}*\n"
                           f"------------------------------\n"]
         elif delivery_arrival_variant == 'address' and delivery_derival_variant == 'terminal':
-            output_top = [f"Расчет перевозки до адреса *{derival_city}* - *{arrival_city}*\n"
+            output_top = [f"Расчет перевозки до адреса *{derival_city}* - *{arrival_city}* "
+                          f"_{get_handling}_\n"
                           f"------------------------------\n"]
         else:
             output_top = [f"Расчет перевозки *{derival_city}* - *{arrival_city}*\n"
@@ -398,18 +404,21 @@ if __name__ == "__main__":
     data_calc = ShippersTerminalCalculation()
     calculation_ = TotalTerminalResult()
     derival_city = 'Москва'
-    arrival_city = 'Беломорск'
+    # arrival_city = 'Беломорск'
+    arrival_city = 'Петрозаводск'
     derival_city_full_name = 'г. Москва'
-    arrival_city_full_name = 'Беломорск г (Респ. Карелия)'
+    # arrival_city_full_name = 'Беломорск г (Респ. Карелия)'
+    arrival_city_full_name = 'Петрозаводск г (Респ. Карелия)'
     derival_city_kladr = '7800000000000000000000000'
     arrival_city_kladr = '7700000000000000000000000'
-    delivery_arrival_variant = 'address'
-    # data = data_calc.delline_terminal_calc(derival_city=derival_city, arrival_city=arrival_city,
+    delivery_arrival_variant = 'terminal'
+    # data = data_calc.delline_calc(derival_city=derival_city, arrival_city=arrival_city,
     #                                          delivery_arrival_variant=delivery_arrival_variant)
     data = calculation_.get_simple_result(delivery_type="auto", delivery_arrival_variant=delivery_arrival_variant,
                                           derival_city_full_name=derival_city_full_name,
                                           arrival_city_full_name=arrival_city_full_name,
-                                          derival_city=derival_city, arrival_city=arrival_city)
+                                          derival_city=derival_city, arrival_city=arrival_city,
+                                          handling='no')
     print(data)
     # print(datetime.datetime.now() - start_t)
     # print(timeit.timeit(calculation_.get_simple_result, number=1))

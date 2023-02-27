@@ -72,7 +72,7 @@ class JDEParser(DellineParser):
 
         response = requests.get(self.url, headers=self.headers, params=params).json()
 
-        if response["result"] == '1':
+        if response.get("result") == '1':
             return response
         elif response["services"][0]["error"].split(": ")[-1]:
             return response["services"][0]["error"].split(": ")[-1]
@@ -81,11 +81,19 @@ class JDEParser(DellineParser):
 
 
 if __name__ == "__main__":
-    params = GetParserParams().jde_params(total_volume='0', quantity='1', weight='10', total_weight='0',
-                                                  length='0.4', width='0.35', height='0.3', insurance='50000',
-                                                  derival_city='Москва', arrival_city="Санкт-Петербург")
+    # params = GetParserParams().jde_params(total_volume='0', quantity='1', weight='20', handling='no',
+    #                                       type='1', length='0.3', width='0.3', height='0.3', insurance='33000',
+    #                                       derival_city='Санкт-Петербург', arrival_city="Смоленск",
+    #                                       delivery_arrival_variant='address',
+    #                                       delivery_derival_variant='terminal')
 
-    parser = JDEParser()
-    data = parser.jde_get_data(params)
+    params = GetParserParams().vozovoz_params(total_volume='0', quantity='1', weight='20', handling='no',
+                                          type='1', length='0.3', width='0.3', height='0.3', insurance='33000',
+                                          derival_city='Псков', arrival_city="Тверь",
+                                          delivery_arrival_variant='address',
+                                          delivery_derival_variant='terminal')
+
+    parser = VozovozParser()
+    data = parser.vozovoz_get_data(params)
 
     print(data)
