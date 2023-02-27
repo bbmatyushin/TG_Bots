@@ -15,8 +15,8 @@ async def query_choice_size(callback: types.CallbackQuery, state: FSMContext):
     logger.callback_logger_info(callback)
     async with state.proxy() as data:
         data["cargo_quantity"] = '1'
-    await callback.message.reply(text="*Шаг [1/5]:*\n📐 Выберите ед.изм. для размера груза:",
-                                 parse_mode='Markdown', reply_markup=kb.ikb_choice_size)
+    await callback.message.answer(text="*Шаг [1/5]:*\n📐 Выберите ед.изм. для размера груза:",
+                                  parse_mode='Markdown', reply_markup=kb.ikb_choice_size)
     await FSMQuantityOne.cargo_choice_size.set()
     await callback.answer()
 
@@ -52,7 +52,7 @@ async def query_cargo_weight(message: types.Message, state: FSMContext):
         logger.message_logger_info(message)
         async with state.proxy() as data:
             data["cargo_dimensions"] = cargo_dimensions_list
-        await message.reply(text="*Шаг [3/5]:*\n🏋🏻 Укажите вес груза в кг:",
+        await message.answer(text="*Шаг [3/5]:*\n🏋🏻 Укажите вес груза в кг:",
                                  parse_mode='Markdown')
         await FSMQuantityOne.cargo_weight.set()
 
@@ -63,7 +63,7 @@ async def query_cargo_insurance(message: types.Message, state: FSMContext):
     if message.text.isdigit():
         async with state.proxy() as data:
             data["cargo_weight"] = message.text
-        await message.reply(text="*Шаг [4/5]:*\n📑 Укажите стоимость груза, для расчета страховки:",
+        await message.answer(text="*Шаг [4/5]:*\n📑 Укажите стоимость груза, для расчета страховки:",
                             parse_mode='Markdown')
         await FSMQuantityOne.cargo_insurance.set()
     else:
@@ -103,8 +103,9 @@ async def get_shipping_calc(callback: types.CallbackQuery, state: FSMContext):
     delivery_arrival_variant = data["delivery_arrival_variant"]
     derival_city_full_name = data["derival_city_full_name"]
     arrival_city_full_name = data["arrival_city_full_name"]
+    handling = data["handling"] if data.get("handling") else 'no'
 
-    await callback.message.answer(text=f"🧮 Сравнивается стоимость доставки между ТК "
+    await callback.message.answer(text=f"🔎 Сравнивается стоимость доставки между ТК "
                               f"*{', '.join(shipper_list_full_name)}*...\n"
                               f"_(время сравнения ~6.3 сек.)_",
                          parse_mode='Markdown')
@@ -118,7 +119,8 @@ async def get_shipping_calc(callback: types.CallbackQuery, state: FSMContext):
                            delivery_derival_variant=delivery_derival_variant,
                            delivery_arrival_variant=delivery_arrival_variant,
                            derival_city_full_name=derival_city_full_name,
-                           arrival_city_full_name=arrival_city_full_name)
+                           arrival_city_full_name=arrival_city_full_name,
+                           handling=handling)
     await callback.message.answer(result_answer, parse_mode="Markdown")
     await callback.answer()
     await state.finish()  # выходим из машинного состояния
@@ -140,3 +142,5 @@ def register_handlers(dp: Dispatcher):
                                 state=FSMQuantityOne.cargo_insurance)
     dp.register_callback_query_handler(get_shipping_calc, text=["auto", "express"],
                                        state=FSMQuantityOne.delivery_type)
+
+#🚫❗️📍🏰🏘🚛🚚🧮🔎🔢👀

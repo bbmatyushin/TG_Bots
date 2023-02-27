@@ -42,6 +42,11 @@ ikb_express = InlineKeyboardMarkup(row_width=2)\
     .add(InlineKeyboardButton(text="Обычная", callback_data="auto"),
          InlineKeyboardButton(text="Экспресс", callback_data="express"))
 
+"""ПРР"""
+ikb_handling = InlineKeyboardMarkup(row_width=2)\
+    .add(InlineKeyboardButton(text="без ПРР", callback_data="handling_no"),
+         InlineKeyboardButton(text="требуется ПРР", callback_data="handling_yes"))
+
 """Кнопка для возврата выбора вида доставки"""
 ikb_escape = InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton(text="Вернуться к выбору",
                                                                         callback_data="escape_button"))

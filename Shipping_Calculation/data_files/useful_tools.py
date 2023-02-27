@@ -123,10 +123,43 @@ def get_kladr_street(city_id: str, street_name='Л'):
         return return_kladr_street(city_id=city_id, street_name=street_name)
 
 
+def change_city_name(city_text: str) -> str:
+    if city_text.lower() in ['спб', 'питер', 'санкт']:
+        return 'Санкт-Петербург'
+    elif city_text.lower() in ['мск', 'мсква']:
+        return 'Москва'
+    else:
+        return city_text
+
+
+def jde_get_terminal_code(derival_city_kladr, arrival_city_kladr):
+    """Получаем код терминала, чтобы точнее указать город
+    отправителя/получателя. Бывают города с одинаковым названиями."""
+    if os.path.exists(Path(dir_json_data, 'jde_code_terminal.json')):
+        codes_terminal = {}
+        with open(f"{Path(dir_json_data, 'jde_code_terminal.json')}", "r") as f:
+            data = json.load(f)
+            codes_terminal["derival"] = \
+                data[derival_city_kladr]["terminal_code"] if data.get(derival_city_kladr) else ''
+            codes_terminal["arrival"] = \
+                data[arrival_city_kladr]["terminal_code"] if data.get(arrival_city_kladr) else ''
+        return codes_terminal
+    else:
+        url = 'https://api.jde.ru/vD/geo/search?mode=2'
+        data, feature = {}, {}
+        response = requests.get(url=url).json()
+        for el in response:
+            feature["city"] = el["title"]
+            feature["terminal_code"] = el["code"]
+            data[el["kladr_code"]] = feature.copy()
+        with open(f"{Path(dir_json_data, 'jde_code_terminal.json')}", 'w') as f:
+            json.dump(data, f, ensure_ascii=False)
+
+
 
 if __name__ == "__main__":
-    # c = get_kladr_street('111')
-    c = get_kladr_street('200601')
+    c =jde_get_terminal_code(derival_city_kladr='0204400100000',
+                          arrival_city_kladr='7700000000000')
 
     print(c)
 

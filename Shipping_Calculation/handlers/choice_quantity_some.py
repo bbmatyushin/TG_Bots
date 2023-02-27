@@ -14,7 +14,7 @@ logger = LoggerForBot()
 # @dp.callback_query_handler(text="quantity_some", state=FSMMain.cargo_choice_quantity)
 async def query_cargo_quantity(callback: types.CallbackQuery):
     logger.callback_logger_info(callback)
-    await callback.message.reply(text="*Шаг [1/8]:*\n🔢 Укажите количество мест:",
+    await callback.message.answer(text="*Шаг [1/8]:*\n🔢 Укажите количество мест:",
                                  parse_mode='Markdown')
     await FSMQuantitySome.cargo_quantity.set()
     await callback.answer()
@@ -64,7 +64,7 @@ async def query_cargo_most_weight(message: types.Message, state: FSMContext):
         async with state.proxy() as data:
             data["cargo_dimensions"] = cargo_dimensions_list
             
-        await message.reply(text="*Шаг [4/8]:*\n🏋🏻 Укажите самое тяжелое место в кг:",
+        await message.answer(text="*Шаг [4/8]:*\n🏋🏻 Укажите самое тяжелое место в кг:",
                             parse_mode='Markdown')
         await FSMQuantitySome.cargo_most_weight.set()
 
@@ -74,7 +74,7 @@ async def query_cargo_total_weight(message: types.Message, state: FSMContext):
     logger.message_logger_info(message)
     async with state.proxy() as data:
         data["cargo_most_weight"] = message.text.replace(",", ".").strip()
-    await message.reply(text="*Шаг [5/8]:*\nУкажите общий вес груза в кг:",
+    await message.answer(text="*Шаг [5/8]:*\nУкажите общий вес груза в кг:",
                         parse_mode='Markdown')
     await FSMQuantitySome.cargo_total_weight.set()
 
@@ -84,7 +84,7 @@ async def query_cargo_total_volume(message: types.Message, state: FSMContext):
     logger.message_logger_info(message)
     async with state.proxy() as data:
         data["cargo_total_weight"] = message.text.replace(",", ".").strip()
-    await message.reply(text="*Шаг [6/8]:*\nУкажите общий объём груза в м3:",
+    await message.answer(text="*Шаг [6/8]:*\nУкажите общий объём груза в м3:",
                         parse_mode='Markdown')
     await FSMQuantitySome.cargo_total_volume.set()
 
@@ -95,7 +95,7 @@ async def query_total_volume(message: types.Message, state: FSMContext):
     if message.text.replace(",", ".").replace(".", "").isdigit():
         async with state.proxy() as data:
             data["cargo_total_volume"] = message.text.replace(",", ".").strip()
-        await message.reply(text="*Шаг [7/8]:*\n📑 Укажите стоимость груза, для расчета страховки:",
+        await message.answer(text="*Шаг [7/8]:*\n📑 Укажите стоимость груза, для расчета страховки:",
                             parse_mode='Markdown')
         await FSMQuantitySome.cargo_insurance.set()
     else:
@@ -136,8 +136,9 @@ async def get_shipping_calc(callback: types.CallbackQuery, state: FSMContext):
         delivery_arrival_variant = data["delivery_arrival_variant"]
         derival_city_full_name = data["derival_city_full_name"]
         arrival_city_full_name = data["arrival_city_full_name"]
+        handling = data["handling"] if data.get("handling") else 'no'
 
-    await callback.message.answer(text=f"🧮 Сравнивается стоимость доставки между ТК "
+    await callback.message.answer(text=f"🔎 Сравнивается стоимость доставки между ТК "
                                        f"*{', '.join(shipper_list_full_name)}*...\n"
                                        f"_(время сравнения ~6.3 сек.)_",
                                   parse_mode='Markdown')
@@ -151,8 +152,8 @@ async def get_shipping_calc(callback: types.CallbackQuery, state: FSMContext):
                            delivery_derival_variant=delivery_derival_variant,
                            delivery_arrival_variant=delivery_arrival_variant,
                            derival_city_full_name=derival_city_full_name,
-                           arrival_city_full_name=arrival_city_full_name
-                           )
+                           arrival_city_full_name=arrival_city_full_name,
+                           handling=handling)
     await callback.message.answer(result_answer, parse_mode="Markdown")
     await callback.answer()
     await state.finish()  # выходим из машинного состояния
@@ -181,3 +182,4 @@ def register_handlers(dp: Dispatcher):
     dp.register_callback_query_handler(get_shipping_calc, text=["auto", "express"],
                                        state=FSMQuantitySome.delivery_type)
 
+#🚫❗️📍🏰🏘🚛🚚🧮🔎🔢👀
