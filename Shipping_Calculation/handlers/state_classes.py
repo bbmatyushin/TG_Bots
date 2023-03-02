@@ -28,6 +28,7 @@ class FSMQuantityOne(StatesGroup):
     delivery_type = State()  # тип доставки - обычная/экспресс
     cargo_dimensions = State()  # размеры
     quantity_some_one = State()
+    temperature = State()
 
 
 class FSMQuantitySome(StatesGroup):
@@ -40,3 +41,4 @@ class FSMQuantitySome(StatesGroup):
     delivery_type = State()  # тип доставки - обычная/экспресс
     cargo_dimensions = State()  # размеры
     quantity_some_calc = State()
+    temperature = State()

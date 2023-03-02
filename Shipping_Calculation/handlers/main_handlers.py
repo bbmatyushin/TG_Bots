@@ -172,7 +172,7 @@ async def get_check_arrival_city(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(text="simple_quick_calc", state=FSMMain.calc_method_choice)
 async def calc_simple_quick_method(callback: types.CallbackQuery, state: FSMContext):
     logger.callback_logger_info(callback)
-    await callback.message.answer(text=f"🔎 Сравнивается стоимость доставки между ТК "
+    await callback.message.answer(text=f"⏳ Сравнивается стоимость доставки между ТК "
                                        f"*{', '.join(shipper_list_full_name)}*...\n"
                                        f"_(время сравнения ~6.3 сек.)_",
                                        parse_mode='Markdown')
@@ -182,13 +182,24 @@ async def calc_simple_quick_method(callback: types.CallbackQuery, state: FSMCont
         derival_city_full_name = data["derival_city_full_name"]
         arrival_city_full_name = data["arrival_city_full_name"]
         handling = data["handling"] if data.get("handling") else 'no'
+        default_args = {  # необходимые параметры для расчета
+            "total_volume": '0',
+            "quantity": '1',
+            "weight": '8',
+            "total_weight": '0',
+            "length": '0.3',
+            "width": '0.2',
+            "height": '0.25',
+            "insurance": '50000',
+            "delivery_type": 'auto'
+        }
         result_answer = TotalTerminalResult()\
                 .get_simple_result(derival_city=data["derival_city"], arrival_city=data["arrival_city"],
                                    derival_city_full_name=derival_city_full_name,
                                    arrival_city_full_name=arrival_city_full_name,
                                    delivery_derival_variant=delivery_derival_variant,
                                    delivery_arrival_variant=delivery_arrival_variant,
-                                   handling=handling)
+                                   handling=handling, **default_args)
 
     await callback.message.answer(result_answer, parse_mode="Markdown")
     await callback.answer()
