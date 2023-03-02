@@ -14,7 +14,7 @@ logger = LoggerForBot()
 # @dp.callback_query_handler(text="quantity_some", state=FSMMain.cargo_choice_quantity)
 async def query_cargo_quantity(callback: types.CallbackQuery):
     logger.callback_logger_info(callback)
-    await callback.message.answer(text="*Шаг [1/8]:*\n🔢 Укажите количество мест:",
+    await callback.message.answer(text="*Шаг [1/9]:*\n🔢 Укажите количество мест:",
                                  parse_mode='Markdown')
     await FSMQuantitySome.cargo_quantity.set()
     await callback.answer()
@@ -25,7 +25,7 @@ async def query_cargo_dimensions_size(message: types.Message, state: FSMContext)
     logger.message_logger_warn(message)
     async with state.proxy() as data:
         data["cargo_quantity"] = message.text.strip()
-    await message.answer(text="*Шаг [2/8]:*\n📐 Выберите ед.изм. для размера груза:",
+    await message.answer(text="*Шаг [2/9]:*\n📐 Выберите ед.изм. для размера груза:",
                          parse_mode='Markdown', reply_markup=kb.ikb_choice_size)
     await FSMQuantitySome.cargo_choice_size.set()
 
@@ -42,7 +42,7 @@ async def query_cargo_dimensions(callback: types.CallbackQuery, state: FSMContex
     else:
         example = "✅ _Пример: 300 450 1000_"
     
-    await callback.message.answer(text=f"*Шаг [3/8]:*\n📦 Укажите через пробел Д×Ш×В самого большого места, "
+    await callback.message.answer(text=f"*Шаг [3/9]:*\n📦 Укажите через пробел Д×Ш×В самого большого места, "
                                        f"как в примере:\n\n"
                                        f"{example}", parse_mode='Markdown')
     await FSMQuantitySome.cargo_dimensions.set()
@@ -64,7 +64,7 @@ async def query_cargo_most_weight(message: types.Message, state: FSMContext):
         async with state.proxy() as data:
             data["cargo_dimensions"] = cargo_dimensions_list
             
-        await message.answer(text="*Шаг [4/8]:*\n🏋🏻 Укажите самое тяжелое место в кг:",
+        await message.answer(text="*Шаг [4/9]:*\n🏋🏻 Укажите самое тяжелое место в кг:",
                             parse_mode='Markdown')
         await FSMQuantitySome.cargo_most_weight.set()
 
@@ -74,7 +74,7 @@ async def query_cargo_total_weight(message: types.Message, state: FSMContext):
     logger.message_logger_info(message)
     async with state.proxy() as data:
         data["cargo_most_weight"] = message.text.replace(",", ".").strip()
-    await message.answer(text="*Шаг [5/8]:*\nУкажите общий вес груза в кг:",
+    await message.answer(text="*Шаг [5/9]:*\nУкажите общий вес груза в кг:",
                         parse_mode='Markdown')
     await FSMQuantitySome.cargo_total_weight.set()
 
@@ -84,7 +84,7 @@ async def query_cargo_total_volume(message: types.Message, state: FSMContext):
     logger.message_logger_info(message)
     async with state.proxy() as data:
         data["cargo_total_weight"] = message.text.replace(",", ".").strip()
-    await message.answer(text="*Шаг [6/8]:*\nУкажите общий объём груза в м3:",
+    await message.answer(text="*Шаг [6/9]:*\nУкажите общий объём груза в м3:",
                         parse_mode='Markdown')
     await FSMQuantitySome.cargo_total_volume.set()
 
@@ -95,22 +95,35 @@ async def query_total_volume(message: types.Message, state: FSMContext):
     if message.text.replace(",", ".").replace(".", "").isdigit():
         async with state.proxy() as data:
             data["cargo_total_volume"] = message.text.replace(",", ".").strip()
-        await message.answer(text="*Шаг [7/8]:*\n📑 Укажите стоимость груза, для расчета страховки:",
+        await message.answer(text="*Шаг [7/9]:*\n📑 Укажите стоимость груза, для расчета страховки:",
                             parse_mode='Markdown')
         await FSMQuantitySome.cargo_insurance.set()
     else:
         await message.reply(text="❌ Общий объём должен состоять только из цифр. Попробуйте ввести "
                                  "общий объём ещё раз:")
-
-
+        
+        
 # @dp.message_handler(content_types=["text"], state=FSMQuantitySome.cargo_insurance)
-async def query_express_status(message: types.Message, state: FSMContext):
+async def query_temperature_mode(message: types.Message, state: FSMContext):
     logger.message_logger_info(message)
     async with state.proxy() as data:
         data["cargo_insurance"] = message.text.strip()
-    await message.answer(text="*Шаг [8/8]:*\n⚡️ Рассчитать стоимость для *обычной* доставки или *экспресс*?",
-                         parse_mode='Markdown', reply_markup=kb.ikb_express)
+    await message.answer(text="*Шаг [8/9]:*\n🌡 Груз нужно доставить в тепле?\n"
+                              "_(доступно только для ЖДЭ)_",
+                         parse_mode='Markdown', reply_markup=kb.ikb_temperature)
+    await FSMQuantitySome.temperature.set()
+
+
+# @dp.callback_query_handler(text=["temperature_no", "temperature_yes"], state=FSMQuantitySome.temperature)
+async def query_express_status(callback: types.CallbackQuery, state: FSMContext):
+    logger.callback_logger_info(callback)
+    async with state.proxy() as data:
+        data["temperature"] = 'yes' if callback.data == 'temperature_yes' else 'no'
+    await callback.message.answer(text="*Шаг [9/9]:*\n⚡️ Рассчитать стоимость для "
+                                       "*обычной* доставки или *экспресс*?",
+                                  parse_mode='Markdown', reply_markup=kb.ikb_express)
     await FSMQuantitySome.delivery_type.set()
+    await callback.answer()
 
 
 # @dp.callback_query_handler(text=["auto", "express"], state=FSMQuantitySome.delivery_type)
@@ -137,10 +150,15 @@ async def get_shipping_calc(callback: types.CallbackQuery, state: FSMContext):
         derival_city_full_name = data["derival_city_full_name"]
         arrival_city_full_name = data["arrival_city_full_name"]
         handling = data["handling"] if data.get("handling") else 'no'
+        temperature = 'yes' if data.get("temperature") == 'yes' else 'no'
 
-    await callback.message.answer(text=f"🔎 Сравнивается стоимость доставки между ТК "
-                                       f"*{', '.join(shipper_list_full_name)}*...\n"
-                                       f"_(время сравнения ~6.3 сек.)_",
+        str_answer = f"⏳ Сравнивается стоимость доставки между ТК " \
+                     f"*{', '.join(shipper_list_full_name)}*...\n" \
+                     f"_(время сравнения ~6.3 сек.)_" \
+            if temperature == 'no' else \
+            "⏳ Начался расчет стоимости доставки..."
+
+    await callback.message.answer(text=f"{str_answer}",
                                   parse_mode='Markdown')
 
     result_answer = TotalTerminalResult()\
@@ -153,7 +171,7 @@ async def get_shipping_calc(callback: types.CallbackQuery, state: FSMContext):
                            delivery_arrival_variant=delivery_arrival_variant,
                            derival_city_full_name=derival_city_full_name,
                            arrival_city_full_name=arrival_city_full_name,
-                           handling=handling)
+                           handling=handling, temperature=temperature)
     await callback.message.answer(result_answer, parse_mode="Markdown")
     await callback.answer()
     await state.finish()  # выходим из машинного состояния
@@ -177,8 +195,10 @@ def register_handlers(dp: Dispatcher):
                                 state=FSMQuantitySome.cargo_total_weight)
     dp.register_message_handler(query_total_volume, content_types=["text"],
                                 state=FSMQuantitySome.cargo_total_volume)
-    dp.register_message_handler(query_express_status, content_types=["text"],
+    dp.register_message_handler(query_temperature_mode, content_types=["text"],
                                 state=FSMQuantitySome.cargo_insurance)
+    dp.register_callback_query_handler(query_express_status, text=["temperature_no", "temperature_yes"],
+                                       state=FSMQuantitySome.temperature)
     dp.register_callback_query_handler(get_shipping_calc, text=["auto", "express"],
                                        state=FSMQuantitySome.delivery_type)
 

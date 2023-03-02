@@ -15,7 +15,7 @@ async def query_choice_size(callback: types.CallbackQuery, state: FSMContext):
     logger.callback_logger_info(callback)
     async with state.proxy() as data:
         data["cargo_quantity"] = '1'
-    await callback.message.answer(text="*Шаг [1/5]:*\n📐 Выберите ед.изм. для размера груза:",
+    await callback.message.answer(text="*Шаг [1/6]:*\n📐 Выберите ед.изм. для размера груза:",
                                   parse_mode='Markdown', reply_markup=kb.ikb_choice_size)
     await FSMQuantityOne.cargo_choice_size.set()
     await callback.answer()
@@ -32,7 +32,7 @@ async def query_cargo_dimensions_q1(callback: types.CallbackQuery, state: FSMCon
         example = "✅ _Пример: 30 45 100_"
     else:
         example = "✅ _Пример: 300 450 1000_"
-    await callback.message.answer(text=f"*Шаг [2/5]:*\n📦 Укажите через пробел Д×Ш×В груза, как в примере:\n\n"
+    await callback.message.answer(text=f"*Шаг [2/6]:*\n📦 Укажите через пробел Д×Ш×В груза, как в примере:\n\n"
                                            f"{example}", parse_mode='Markdown')
     await FSMQuantityOne.cargo_dimensions.set()
     await callback.answer()
@@ -52,7 +52,7 @@ async def query_cargo_weight(message: types.Message, state: FSMContext):
         logger.message_logger_info(message)
         async with state.proxy() as data:
             data["cargo_dimensions"] = cargo_dimensions_list
-        await message.answer(text="*Шаг [3/5]:*\n🏋🏻 Укажите вес груза в кг:",
+        await message.answer(text="*Шаг [3/6]:*\n🏋🏻 Укажите вес груза в кг:",
                                  parse_mode='Markdown')
         await FSMQuantityOne.cargo_weight.set()
 
@@ -63,7 +63,7 @@ async def query_cargo_insurance(message: types.Message, state: FSMContext):
     if message.text.isdigit():
         async with state.proxy() as data:
             data["cargo_weight"] = message.text
-        await message.answer(text="*Шаг [4/5]:*\n📑 Укажите стоимость груза, для расчета страховки:",
+        await message.answer(text="*Шаг [4/6]:*\n📑 Укажите стоимость груза, для расчета страховки:",
                             parse_mode='Markdown')
         await FSMQuantityOne.cargo_insurance.set()
     else:
@@ -72,13 +72,25 @@ async def query_cargo_insurance(message: types.Message, state: FSMContext):
 
       
 # @dp.message_handler(content_types=["text"], state=FSMQuantityOne.cargo_insurance)
-async def query_express_status(message: types.Message, state: FSMContext):
+async def query_temperature_mode(message: types.Message, state: FSMContext):
     logger.message_logger_info(message)
     async with state.proxy() as data:
         data["cargo_insurance"] = message.text.strip()
-    await message.answer(text="*Шаг [5/5]:*\n⚡️ Рассчитать стоимость для *обычной* доставки или *экспресс*?",
+    await message.answer(text="*Шаг [5/6]:*\n🌡 Груз нужно доставить в тепле?\n"
+                              "_(доступно только для ЖДЭ)_",
+                         parse_mode='Markdown', reply_markup=kb.ikb_temperature)
+    await FSMQuantityOne.temperature.set()
+
+
+# @dp.callback_query_handler(text=["temperature_no", "temperature_yes"], state=FSMQuantityOne.temperature)
+async def query_express_status(callback: types.CallbackQuery, state: FSMContext):
+    logger.callback_logger_info(callback)
+    async with state.proxy() as data:
+        data["temperature"] = 'yes' if callback.data == 'temperature_yes' else 'no'
+    await callback.message.answer(text="*Шаг [6/6]:*\n⚡️ Рассчитать стоимость для *обычной* доставки или *экспресс*?",
                          parse_mode='Markdown', reply_markup=kb.ikb_express)
     await FSMQuantityOne.delivery_type.set()
+    await callback.answer()
 
 
 # @dp.callback_query_handler(text=["auto", "express"], state=FSMQuantitySome.delivery_type)
@@ -104,11 +116,16 @@ async def get_shipping_calc(callback: types.CallbackQuery, state: FSMContext):
     derival_city_full_name = data["derival_city_full_name"]
     arrival_city_full_name = data["arrival_city_full_name"]
     handling = data["handling"] if data.get("handling") else 'no'
+    temperature = 'yes' if data.get("temperature") == 'yes' else 'no'
 
-    await callback.message.answer(text=f"🔎 Сравнивается стоимость доставки между ТК "
-                              f"*{', '.join(shipper_list_full_name)}*...\n"
-                              f"_(время сравнения ~6.3 сек.)_",
-                         parse_mode='Markdown')
+    str_answer = f"⏳ Сравнивается стоимость доставки между ТК " \
+                 f"*{', '.join(shipper_list_full_name)}*...\n" \
+                 f"_(время сравнения ~6.3 сек.)_" \
+        if temperature == 'no' else \
+        "⏳ Начался расчет стоимости доставки..."
+
+    await callback.message.answer(text=f"{str_answer}",
+                                  parse_mode='Markdown')
 
     result_answer = TotalTerminalResult()\
         .get_simple_result(weight=weight, length=length, width=width, height=height,
@@ -120,7 +137,7 @@ async def get_shipping_calc(callback: types.CallbackQuery, state: FSMContext):
                            delivery_arrival_variant=delivery_arrival_variant,
                            derival_city_full_name=derival_city_full_name,
                            arrival_city_full_name=arrival_city_full_name,
-                           handling=handling)
+                           handling=handling, temperature=temperature)
     await callback.message.answer(result_answer, parse_mode="Markdown")
     await callback.answer()
     await state.finish()  # выходим из машинного состояния
@@ -138,8 +155,10 @@ def register_handlers(dp: Dispatcher):
                                 state=FSMQuantityOne.cargo_dimensions)
     dp.register_message_handler(query_cargo_insurance, content_types=["text"],
                                 state=FSMQuantityOne.cargo_weight)
-    dp.register_message_handler(query_express_status, content_types=["text"],
+    dp.register_message_handler(query_temperature_mode, content_types=["text"],
                                 state=FSMQuantityOne.cargo_insurance)
+    dp.register_callback_query_handler(query_express_status, text=["temperature_no", "temperature_yes"],
+                                       state=FSMQuantityOne.temperature)
     dp.register_callback_query_handler(get_shipping_calc, text=["auto", "express"],
                                        state=FSMQuantityOne.delivery_type)
 

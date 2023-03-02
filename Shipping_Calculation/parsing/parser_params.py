@@ -377,7 +377,14 @@ class GetParserParams:
         }
 
         if kwargs.get("handling") == 'yes':  # если требуется ПРР
+            if kwargs.get("temperature") == 'yes':
+                params["services"] = 'DLU, TMP, '
             params["services"] = 'DLU, '
+
+        if kwargs.get("temperature") == 'yes':  # если требуется ПРР
+            if kwargs.get("handling") == 'yes':
+                params["services"] = 'DLU, TMP, '
+            params["services"] = 'TMP, '
 
         if kwargs.get("delivery_arrival_variant") == 'address' and \
                 kwargs.get("delivery_derival_variant") == 'terminal':

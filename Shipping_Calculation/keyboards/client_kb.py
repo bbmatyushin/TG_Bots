@@ -47,6 +47,11 @@ ikb_handling = InlineKeyboardMarkup(row_width=2)\
     .add(InlineKeyboardButton(text="без ПРР", callback_data="handling_no"),
          InlineKeyboardButton(text="требуется ПРР", callback_data="handling_yes"))
 
+"""Требуется ли доставка в тепле"""
+ikb_temperature = InlineKeyboardMarkup(row_width=2)\
+    .add(InlineKeyboardButton(text="Обычный режим", callback_data="temperature_no"),
+         InlineKeyboardButton(text="Доставка в тепле", callback_data="temperature_yes"))
+
 """Кнопка для возврата выбора вида доставки"""
 ikb_escape = InlineKeyboardMarkup(row_width=1).add(InlineKeyboardButton(text="Вернуться к выбору",
                                                                         callback_data="escape_button"))
