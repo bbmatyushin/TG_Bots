@@ -66,11 +66,18 @@ def check_cites_on_pop_list(city_name: str):
     with open(f"{Path(dir_json_data, 'popular_cites.json')}", 'r') as f:
         popular = json.load(f)
     for city in list(popular.keys()):
-        if re.search(patern, popular[city]['full_name'], re.IGNORECASE):
+        if re.search(patern, city, re.IGNORECASE):
             data["city_id"] = popular[city]["city_id"]
             data["kladr"] = popular[city]["kladr"]
             data["name"] = re.sub('_.*', '', city)
             city_data[popular[city]["full_name"]] = data.copy()
+    if not city_data:  # если ничего не нашлось
+        for city in list(popular.keys()):
+            if re.search(patern, popular[city]['full_name'], re.IGNORECASE):
+                data["city_id"] = popular[city]["city_id"]
+                data["kladr"] = popular[city]["kladr"]
+                data["name"] = re.sub('_.*', '', city)
+                city_data[popular[city]["full_name"]] = data.copy()
 
     return city_data
 
