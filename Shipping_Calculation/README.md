@@ -30,7 +30,7 @@ sudo docker build -t shipping_bot .
 
 Поднимаем контейнер:
 ```shell
-sudo docker run --name=shipping_bot --restart=always shipping_bot 
+sudo docker run --name=shipping_bot --restart=always -d shipping_bot 
 ```
 
 #### Запуск как сервисную службу 

@@ -3,8 +3,8 @@ from aiogram.dispatcher import FSMContext
 
 from handlers.state_classes import FSMMain, FSMQuantityOne
 from keyboards import client_kb as kb
-from logger.get_logs import LoggerForBot
 from data_files.useful_tools import shipper_list_full_name
+from logger.get_logs import LoggerForBot
 from calculation.shippers_calc import TotalTerminalResult
 
 # logger = LoggerForBot()
@@ -12,7 +12,7 @@ from calculation.shippers_calc import TotalTerminalResult
 
 # @dp.callback_query_handler(text="quantity_1", state=FSMMain.cargo_choice_quantity)
 async def query_choice_size(callback: types.CallbackQuery, state: FSMContext):
-    await LoggerForBot().callback_logger_info(callback)
+    LoggerForBot().callback_logger_info(callback)
     async with state.proxy() as data:
         data["cargo_quantity"] = '1'
     await callback.message.answer(text="*Шаг [1/6]:*\n📐 Выберите ед.изм. для размера груза:",
@@ -23,7 +23,7 @@ async def query_choice_size(callback: types.CallbackQuery, state: FSMContext):
 
 #@dp.callback_query_handler(text=["metr", "sm", "mm"], state=FSMQuantutyOne.cargo_choice_size)
 async def query_cargo_dimensions_q1(callback: types.CallbackQuery, state: FSMContext):
-    await LoggerForBot().callback_logger_info(callback)
+    LoggerForBot().callback_logger_info(callback)
     async with state.proxy() as data:
         data["cargo_choice_size"] = callback.data
     if callback.data == "metr":
@@ -42,14 +42,14 @@ async def query_cargo_dimensions_q1(callback: types.CallbackQuery, state: FSMCon
 async def query_cargo_weight(message: types.Message, state: FSMContext):
     cargo_dimensions_list = message.text.replace(",", ".").strip().split()
     if len(cargo_dimensions_list) != 3:
-        await LoggerForBot().message_logger_warn(message)
+        LoggerForBot().message_logger_warn(message)
         await message.reply(text=f"🚫 Должно быть 3 размера груза, "
                                  f"а получено - {len(cargo_dimensions_list)}.\n"
                                  f"Попробуйте написать размеры ещё раз:",
                             reply_markup=kb.ikb_choice_size)
         await FSMQuantityOne.cargo_choice_size.set()
     else:
-        await LoggerForBot().message_logger_info(message)
+        LoggerForBot().message_logger_info(message)
         async with state.proxy() as data:
             data["cargo_dimensions"] = cargo_dimensions_list
         await message.answer(text="*Шаг [3/6]:*\n🏋🏻 Укажите вес груза в кг:",
@@ -59,7 +59,7 @@ async def query_cargo_weight(message: types.Message, state: FSMContext):
 
 # @dp.message_handler(content_types=["text"], state=FSMQuantutyOne.cargo_weight)
 async def query_cargo_insurance(message: types.Message, state: FSMContext):
-    await LoggerForBot().message_logger_info(message)
+    LoggerForBot().message_logger_info(message)
     if message.text.isdigit():
         async with state.proxy() as data:
             data["cargo_weight"] = message.text
@@ -73,7 +73,7 @@ async def query_cargo_insurance(message: types.Message, state: FSMContext):
 
 # @dp.message_handler(content_types=["text"], state=FSMQuantityOne.cargo_insurance)
 async def query_temperature_mode(message: types.Message, state: FSMContext):
-    await LoggerForBot().message_logger_info(message)
+    LoggerForBot().message_logger_info(message)
     async with state.proxy() as data:
         data["cargo_insurance"] = message.text.strip()
     await message.answer(text="*Шаг [5/6]:*\n🌡 Груз нужно доставить в тепле?\n"
@@ -84,7 +84,7 @@ async def query_temperature_mode(message: types.Message, state: FSMContext):
 
 # @dp.callback_query_handler(text=["temperature_no", "temperature_yes"], state=FSMQuantityOne.temperature)
 async def query_express_status(callback: types.CallbackQuery, state: FSMContext):
-    await LoggerForBot().callback_logger_info(callback)
+    LoggerForBot().callback_logger_info(callback)
     async with state.proxy() as data:
         data["temperature"] = 'yes' if callback.data == 'temperature_yes' else 'no'
     await callback.message.answer(text="*Шаг [6/6]:*\n⚡️ Рассчитать стоимость для *обычной* доставки или *экспресс*?",
@@ -95,7 +95,7 @@ async def query_express_status(callback: types.CallbackQuery, state: FSMContext)
 
 # @dp.callback_query_handler(text=["auto", "express"], state=FSMQuantitySome.delivery_type)
 async def get_shipping_calc(callback: types.CallbackQuery, state: FSMContext):
-    await LoggerForBot().callback_logger_info(callback)
+    LoggerForBot().callback_logger_info(callback)
     async with state.proxy() as data:
         data["delivery_type"] = callback.data
         if data["cargo_choice_size"] == 'sm':

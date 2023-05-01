@@ -60,11 +60,13 @@ def check_cites_on_pop_list(city_name: str):
     """Проверить входит ли в список уже ранее запрашиваемых городов.
     ПРИ ЗАПРОСАХ ДОСТАВКИ ДО АДРЕССА"""
     city_data, data = {}, {}
-    patern = f"^{city_name.title()}"
+    patern = f"{city_name}"
+    if re.findall(r'\(', patern):
+        patern = patern.split('(')[0]
     with open(f"{Path(dir_json_data, 'popular_cites.json')}", 'r') as f:
         popular = json.load(f)
     for city in list(popular.keys()):
-        if re.search(patern, city):
+        if re.search(patern, popular[city]['full_name'], re.IGNORECASE):
             data["city_id"] = popular[city]["city_id"]
             data["kladr"] = popular[city]["kladr"]
             data["name"] = re.sub('_.*', '', city)
@@ -158,8 +160,11 @@ def jde_get_terminal_code(derival_city_kladr, arrival_city_kladr):
 
 
 if __name__ == "__main__":
-    c =jde_get_terminal_code(derival_city_kladr='0204400100000',
-                          arrival_city_kladr='7700000000000')
+    # c =jde_get_terminal_code(derival_city_kladr='0204400100000',
+    #                       arrival_city_kladr='7700000000000')
+
+    city = 'Ростов-на-Дону г (Ростовская обл.)'
+    c = check_cites_on_pop_list(city)
 
     print(c)
 
