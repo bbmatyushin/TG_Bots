@@ -1,5 +1,6 @@
 import datetime
-import requests
+from aiohttp import ClientSession
+# import requests
 
 from data_files.data_file import API_DELLINE, cdek_client_id, cdek_client_secret,\
         jde_user_id, jde_apy_key
@@ -19,7 +20,7 @@ class GetParserParams:
         # функция ниже вернет {terminal_id: "", city_kladr: ""}
         self.delline_term_kladr_info = DellineTerminals().delline_get_delivery_terminal_data()
 
-    def delline_params(self, **kwargs):
+    async def delline_params(self, **kwargs):
         """
         :param delivery_type:
         :param delivery_variant:
@@ -124,7 +125,7 @@ class GetParserParams:
         return params
 
 # ================ Формируем параметры для запросов VOZOVOZ ================
-    def vozovoz_params(self, **kwargs):
+    async def vozovoz_params(self, **kwargs):
         """
         :param total_volume:
         :param length:
@@ -226,24 +227,24 @@ class GetParserParams:
         return params
     
 # ================ Формируем параметры для запросов СДЭК ================
-    def cdek_get_cities_info(self, city_name: str):
+    async def cdek_get_cities_info(self, city_name: str):
         """Для получения номеров городов согласно документации СДЭК
         https://api-docs.cdek.ru/33829437.html"""
+        async with ClientSession() as session:
+            dict_info = {}
+            url = "https://api.cdek.ru/v2/location/cities"
+            headers = {"Authorization": f"Bearer {self.api_cdek}"}
+            params = {"city": city_name}
+            async with session.get(url, headers=headers, params=params) as response:
+                if response.status == 200:
+                    data_cdek = await response.json()
+                    dict_info["city_code"] = data_cdek[0].get("code")
+                    dict_info["kladr"] = data_cdek[0].get("kladr_code")
+                    return dict_info
+                else:
+                    return None
 
-        dict_info = {}
-        url = "https://api.cdek.ru/v2/location/cities"
-        headers = {"Authorization": f"Bearer {self.api_cdek}"}
-        params = {"city": city_name}
-
-        response = requests.get(url, headers=headers, params=params)
-        if response.status_code == 200:
-            dict_info["city_code"] = response.json()[0].get("code")
-            dict_info["kladr"] = response.json()[0].get("kladr_code")
-            return dict_info
-        else:
-            return None
-
-    def cdek_params(self, **kwargs):
+    async def cdek_params(self, **kwargs):
         """Расчет для отправки одного места.
         Для нескольких мест нужно передать список packages [{}, {}]
 
@@ -260,8 +261,11 @@ class GetParserParams:
         :param delivery_derival_variant:
         """
         tariff_code = 136
-        derival_city_code = self.cdek_get_cities_info(kwargs.get("derival_city"))["city_code"]
-        arrival_city_code = self.cdek_get_cities_info(kwargs.get("arrival_city"))["city_code"]
+        derival_city = await self.cdek_get_cities_info(kwargs.get("derival_city"))
+        derival_city_code = derival_city.get("city_code")
+        arrival_city = await self.cdek_get_cities_info(kwargs.get("arrival_city"))
+        arrival_city_code = arrival_city.get("city_code")
+
 
         # Данные будут приходить в метрах, нужно перевести в см
         length_m, width_m, height_m = map(int, [round(float(kwargs.get("length")) * 100, 0),
@@ -303,7 +307,7 @@ class GetParserParams:
 
         return params
 
-    def jde_params(self, **kwargs):
+    async def jde_params(self, **kwargs):
         """Инфа тут - https://api.jde.ru/dev/api/calculator/calculate-service-cost-smart.html
 
         url_for_type = 'https://api.jde.ru/vD/calculator/PriceTypeListAvailable'

@@ -13,12 +13,12 @@ from data_files.useful_tools import shipper_list_full_name
 from calculation.shippers_calc import TotalTerminalResult
 from handlers.state_classes import FSMMain
 
-logger = LoggerForBot()
+# logger = LoggerForBot()
 
 @dp.message_handler(lambda message: message.text in ['/start', '/help', 'Перезапустить'],
                     content_types=['text'], state="*")
 async def command_start_help_restart(message: types.Message, state=None):
-    LoggerForBot().message_logger_info(message)
+    await LoggerForBot().message_logger_info(message)
     await message.delete()
     await state.reset_data()
     await bot.send_message(message.from_user.id,
@@ -36,7 +36,7 @@ async def command_start_help_restart(message: types.Message, state=None):
 
 @dp.callback_query_handler(text=["to_address"], state=FSMMain.shipment_choice_1)
 async def query_handling_prr(callback:types.CallbackQuery, state: FSMContext):
-    logger.callback_logger_warn(callback)
+    await LoggerForBot().callback_logger_warn(callback)
     async with state.proxy() as data:
         data["delivery_derival_variant"] = 'terminal'
         data["delivery_arrival_variant"] = 'address'
@@ -48,7 +48,7 @@ async def query_handling_prr(callback:types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query_handler(text=["handling_no", "handling_yes"], state=FSMMain.handling)
 async def noactive_shipment_buttons(callback: types.CallbackQuery, state: FSMContext):
-    logger.callback_logger_warn(callback)
+    await LoggerForBot().callback_logger_warn(callback)
     # await callback.message.answer(text="🛠 Кнопка пока в разработке 🔧⚙️",
     #                               reply_markup=kb.ikb_escape)
     async with state.proxy() as data:
@@ -61,14 +61,14 @@ async def noactive_shipment_buttons(callback: types.CallbackQuery, state: FSMCon
 
 @dp.callback_query_handler(text="escape_button", state=FSMMain.shipment_choice_1)
 async def escape_choice_shipment_method(callback: types.CallbackQuery):
-    logger.callback_logger_warn(callback)
+    await LoggerForBot().callback_logger_warn(callback)
     await callback.message.delete()
     await callback.answer()
 
 
 @dp.callback_query_handler(text="terminal_terminal", state=FSMMain.shipment_choice_1)
 async def type_derival_city_simple_quick_calc(callback: types.CallbackQuery, state: FSMContext):
-    logger.callback_logger_info(callback)
+    await LoggerForBot().callback_logger_info(callback)
     async with state.proxy() as data:
         data["delivery_derival_variant"] = 'terminal'
         data["delivery_arrival_variant"] = 'terminal'
@@ -80,7 +80,7 @@ async def type_derival_city_simple_quick_calc(callback: types.CallbackQuery, sta
 
 @dp.message_handler(content_types=['text'], state=FSMMain.derival_city)
 async def query_derival_city(message: types.Message, state: FSMContext):
-    logger.message_logger_info(message)
+    await LoggerForBot().message_logger_info(message)
     norm_city_name = ut.change_city_name(message.text)
     if ut.check_cites_on_pop_list(norm_city_name):  # проверяем есть ли город в популярных...
         pass
@@ -113,7 +113,7 @@ async def query_derival_city(message: types.Message, state: FSMContext):
 
 @dp.message_handler(content_types=["text"], state=FSMMain.check_derival_city)
 async def get_check_derival_city(message: types.Message, state: FSMContext):
-    logger.message_logger_info(message)
+    await LoggerForBot().message_logger_info(message)
     async with state.proxy() as data:
         check_derival_city = data["check_derival_city"]
     async with state.proxy() as data:
@@ -126,7 +126,7 @@ async def get_check_derival_city(message: types.Message, state: FSMContext):
 
 @dp.message_handler(content_types=["text"], state=FSMMain.arrival_city)
 async def query_arrival_city(message: types.Message, state: FSMContext):
-    logger.message_logger_info(message)
+    await LoggerForBot().message_logger_info(message)
     norm_city_name = ut.change_city_name(message.text)
     if ut.check_cites_on_pop_list(norm_city_name):  # проверяем есть ли город в популярных...
         pass
@@ -155,7 +155,7 @@ async def query_arrival_city(message: types.Message, state: FSMContext):
 
 @dp.message_handler(content_types=["text"], state=FSMMain.check_arrival_city)
 async def get_check_arrival_city(message: types.Message, state: FSMContext):
-    logger.message_logger_info(message)
+    await LoggerForBot().message_logger_info(message)
     async with state.proxy() as data:
         check_arrival_city = data["check_arrival_city"]
         data["arrival_city"] = check_arrival_city[message.text]["name"]
@@ -171,7 +171,7 @@ async def get_check_arrival_city(message: types.Message, state: FSMContext):
 
 @dp.callback_query_handler(text="simple_quick_calc", state=FSMMain.calc_method_choice)
 async def calc_simple_quick_method(callback: types.CallbackQuery, state: FSMContext):
-    logger.callback_logger_info(callback)
+    await LoggerForBot().callback_logger_info(callback)
     await callback.message.answer(text=f"⏳ Сравнивается стоимость доставки между ТК "
                                        f"*{', '.join(shipper_list_full_name)}*...\n"
                                        f"_(время сравнения ~6.3 сек.)_",
@@ -191,9 +191,10 @@ async def calc_simple_quick_method(callback: types.CallbackQuery, state: FSMCont
             "width": '0.2',
             "height": '0.25',
             "insurance": '50000',
-            "delivery_type": 'auto'
+            "delivery_type": 'auto',
+            "temperature": "no"
         }
-        result_answer = TotalTerminalResult()\
+        result_answer = await TotalTerminalResult()\
                 .get_simple_result(derival_city=data["derival_city"], arrival_city=data["arrival_city"],
                                    derival_city_full_name=derival_city_full_name,
                                    arrival_city_full_name=arrival_city_full_name,
@@ -212,7 +213,7 @@ async def calc_simple_quick_method(callback: types.CallbackQuery, state: FSMCont
 
 @dp.callback_query_handler(text="simple_features", state=FSMMain.calc_method_choice)
 async def query_choice_quantity(callback: types.CallbackQuery):
-    logger.callback_logger_info(callback)
+    await LoggerForBot().callback_logger_info(callback)
     await callback.message.answer(text="🔢 Отправляется одно или несколько мест?",
                                   reply_markup=kb.ikb_quantity)
     await FSMMain.cargo_choice_quantity.set()
