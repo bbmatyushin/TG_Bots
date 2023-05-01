@@ -1,4 +1,4 @@
-import logging
+from logger.get_logs import LoggerForBot
 # from logger.get_logs import init_logger
 from aiogram.utils import executor
 
@@ -8,11 +8,13 @@ from handlers import main_handlers, choice_quantity_one, choice_quantity_some
 
 async def on_startup(_):
     # init_logger()
-    logging.warning("Bot is on the line!")
+    logger = await LoggerForBot().init_logger()
+    logger.warning("Bot is on the line!")
 
 
-async def on_shutdown(dp):
-    logging.warning("Bot shutdown.")
+async def on_shutdown(_):
+    logger = await LoggerForBot().init_logger()
+    logger.warning("Bot shutdown.")
 
 
 if __name__ == "__main__":

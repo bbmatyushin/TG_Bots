@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import timeit
 
@@ -16,7 +17,7 @@ class ShippersTerminalCalculation:
         self.params = GetParserParams()
         self.delline_cities_terminal = DellineTerminals().delline_get_delivery_terminal_data()
 
-    def delline_calc(self, **kwargs):
+    async def delline_calc(self, **kwargs):
 
         if kwargs.get("delivery_type") == 'express':
             delivery_kladr = self.delline_cities_terminal[kwargs.get("derival_city")]['city_kladr']
@@ -28,8 +29,8 @@ class ShippersTerminalCalculation:
             if not arrival_express:
                 return f"Эксперсс доставка в г.{kwargs.get('arrival_city')} невозможна."
 
-        params = self.params.delline_params(**kwargs)
-        data = self.delline_parser.delline_get_data(params=params)
+        params = await self.params.delline_params(**kwargs)
+        data = await self.delline_parser.delline_get_data(params=params)
 
         if isinstance(data, dict):
             price = data.get("price")
@@ -42,9 +43,9 @@ class ShippersTerminalCalculation:
         else:
             return data
 
-    def vozovoz_calc(self, **kwargs):
-        params = self.params.vozovoz_params(**kwargs)
-        data = self.vozovoz_parser.vozovoz_get_data(params)
+    async def vozovoz_calc(self, **kwargs):
+        params = await self.params.vozovoz_params(**kwargs)
+        data = await self.vozovoz_parser.vozovoz_get_data(params)
 
         if data.get("error"):  # возможны ошибки. Если они есть, то берем только её текст
             if 'Перевозка между ППВ запрещена' in data["error"]["message"]:
@@ -60,13 +61,13 @@ class ShippersTerminalCalculation:
             else:  # если даты разные то вернем сроки в виде 1-4
                 return price, "-".join(map(str, [date_from, date_to]))
 
-    def cdek_calc(self, **kwargs):
+    async def cdek_calc(self, **kwargs):
         """Тариф для расчета = Посылка склад-склад, режим доставки = склад -склад - это код 136
         код 483 - Экспресс склад-склад (https://api-docs.cdek.ru/63345519.html) """
-        params = self.params.cdek_params(**kwargs)
+        params = await self.params.cdek_params(**kwargs)
 
         try:
-            data = self.cdek_parser.cdek_get_data(params)
+            data = await self.cdek_parser.cdek_get_data(params)
 
             if float(kwargs.get("weight")) <= 30.0:
                 price, date_from, date_to = data["total_sum"], data["period_min"], data["period_max"]
@@ -79,14 +80,13 @@ class ShippersTerminalCalculation:
         except KeyError:
             return "_По данному направлению при заданных условиях выбранный тариф недоступен._"
         
-    def jde_calc(self, **kwargs):
+    async def jde_calc(self, **kwargs):
 
         type = '2' if kwargs.get("delivery_type") == "express" else '1'
-
-        params = self.params.jde_params(**kwargs, type=type)
+        params = await self.params.jde_params(**kwargs, type=type)
 
         try:
-            data = self.jde_parser.jde_get_data(params)
+            data = await self.jde_parser.jde_get_data(params)
             if isinstance(data, dict):
                 price = data.get("price")
                 mindays = data.get("mindays")
@@ -108,7 +108,7 @@ class TotalTerminalResult(ShippersTerminalCalculation):
         self.output_footer = []
 
 
-    def check_city(self, derival_city='Москва', arrival_city="Санкт-Петербург",
+    async def check_city(self, derival_city='Москва', arrival_city="Санкт-Петербург",
                    derival_city_full_name='', arrival_city_full_name=''):
         """Для проверки правильности написания города. Вертнет КЛАДР города и улицы,
         полное навание города с регионом.
@@ -169,15 +169,15 @@ class TotalTerminalResult(ShippersTerminalCalculation):
 
         return check_city_dict
 
-    def dellin_get_result(self, **kwargs):
-        delline_calc = self.delline_calc(**kwargs)
+    async def dellin_get_result(self, **kwargs):
+        delline_calc = await self.delline_calc(**kwargs)
         if len(delline_calc) == 2:
             return f'{delline_calc[0]:,} ₽, срок *{delline_calc[1]} дн.*'
         else:
             return delline_calc
 
-    def get_simple_result(self, **kwargs):
-        check_cites_dict = self.check_city(derival_city=kwargs.get("derival_city"),
+    async def get_simple_result(self, **kwargs):
+        check_cites_dict = await self.check_city(derival_city=kwargs.get("derival_city"),
                                            arrival_city=kwargs.get("arrival_city"),
                                            derival_city_full_name=kwargs.get("derival_city_full_name"),
                                            arrival_city_full_name=kwargs.get("arrival_city_full_name"))
@@ -204,26 +204,26 @@ class TotalTerminalResult(ShippersTerminalCalculation):
                 if all([list(self.delline_cities_terminal.keys()).count(derival_city),
                         list(self.delline_cities_terminal.keys()).count(arrival_city)]):
                     # result_args = kwargs
-                    delline_result = self.dellin_get_result(**kwargs, derival_city_kladr=derival_city_kladr,
+                    delline_result = await self.dellin_get_result(**kwargs, derival_city_kladr=derival_city_kladr,
                                                             arrival_city_kladr=arrival_city_kladr,
                                                             arrival_street_kladr=arrival_street_kladr,
                                                             derival_street_kladr=derival_street_kladr)
                 else:
                     delline_result = "_Межтерминальная перевозка не осуществляется._"
             else:
-                delline_result = self.dellin_get_result(**kwargs, derival_city_kladr=derival_city_kladr,
+                delline_result = await self.dellin_get_result(**kwargs, derival_city_kladr=derival_city_kladr,
                                                         arrival_city_kladr=arrival_city_kladr,
                                                         arrival_street_kladr=arrival_street_kladr,
                                                         derival_street_kladr=derival_street_kladr)
 
-            vozovoz_calc = self.vozovoz_calc(**kwargs)
+            vozovoz_calc = await self.vozovoz_calc(**kwargs)
             if len(vozovoz_calc) == 2:
                 vozovoz_result = f"{vozovoz_calc[0]:,} ₽, срок *{vozovoz_calc[1]} дн.*"
             else:
                 vozovoz_result = vozovoz_calc
 
             if kwargs.get("quantity") == '1':
-                cdek_calc = self.cdek_calc(**kwargs)
+                cdek_calc = await self.cdek_calc(**kwargs)
                 if len(cdek_calc) == 2:
                     cdek_result = f"{cdek_calc[0]:,} ₽, срок *{cdek_calc[1]} дн.*"
                 else:
@@ -233,7 +233,7 @@ class TotalTerminalResult(ShippersTerminalCalculation):
         else:
             vozovoz_result, delline_result, cdek_result = '', '', ''
 
-        jde_calc = self.jde_calc(**kwargs, arrival_city_kladr=arrival_city_kladr,
+        jde_calc = await self.jde_calc(**kwargs, arrival_city_kladr=arrival_city_kladr,
                                  derival_city_kladr=derival_city_kladr)
         if len(jde_calc) == 2:
             jde_result = f"{float(jde_calc[0]):,} ₽, срок *{jde_calc[1]} дн.*"
@@ -299,7 +299,7 @@ class TotalTerminalResult(ShippersTerminalCalculation):
         # return output_head, self.output_footer
 
 
-if __name__ == "__main__":
+async def main():
     calc_args = {
         "total_volume": '0',
         "quantity": '1',
@@ -313,14 +313,20 @@ if __name__ == "__main__":
         "arrival_city": "Петрозаводск",
         "delivery_type": 'auto',
         "handling": 'yes',
-        "temperature": "yes",
+        "temperature": "no",
         "delivery_arrival_variant": 'terminal',
         "delivery_derival_variant": 'terminal',
         "derival_city_full_name": 'г. Москва',
         "arrival_city_full_name": 'Петрозаводск г (Респ. Карелия)'
     }
+    task1 = asyncio.create_task(TotalTerminalResult().get_simple_result(**calc_args))
+    await task1
+    print(task1.result())
 
-    calc = TotalTerminalResult()
-    r = calc.get_simple_result(**calc_args)
 
-    print(r)
+if __name__ == "__main__":
+    t0 = datetime.datetime.now()
+
+    asyncio.run(main())
+
+    print(datetime.datetime.now() - t0)

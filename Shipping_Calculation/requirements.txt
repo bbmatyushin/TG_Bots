@@ -1,3 +1,4 @@
 requests==2.28.2
 aiogram==2.24
 fake-headers==1.0.2
+aiologger==0.7.0
